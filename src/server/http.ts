@@ -23,6 +23,9 @@ import sectionMapSvgPath from '../../public/section-map.svg' with { type: 'file'
 const STATIC_ROUTES: Record<string, { path: string; contentType: string }> = {
   '/': { path: indexHtmlPath as unknown as string, contentType: 'text/html; charset=utf-8' },
   '/index.html': { path: indexHtmlPath as unknown as string, contentType: 'text/html; charset=utf-8' },
+  // /captain serves the same SPA bundle -- main.ts branches on
+  // location.pathname at startup rather than needing a second build target.
+  '/captain': { path: indexHtmlPath as unknown as string, contentType: 'text/html; charset=utf-8' },
   '/styles.css': { path: stylesCssPath as unknown as string, contentType: 'text/css; charset=utf-8' },
   '/app.js': { path: appJsPath as unknown as string, contentType: 'text/javascript; charset=utf-8' },
   '/section-map.svg': { path: sectionMapSvgPath as unknown as string, contentType: 'image/svg+xml' },

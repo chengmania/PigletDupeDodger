@@ -1,4 +1,6 @@
 import { networkInterfaces } from 'node:os';
+import { deleteAdmin, readAdmin } from './admin-store.ts';
+import { serveAdminApi } from './admin-http.ts';
 import { broadcast } from './broadcast.ts';
 import type { CommandDeps, ServerContext } from './commands.ts';
 import { serveJournalBackup, serveLeaderboard, serveQr, serveStatic } from './http.ts';
@@ -6,14 +8,16 @@ import { boot, writeSnapshot, writeSnapshotIfDue } from './journal-io.ts';
 import { generateQrMatrix, qrToAsciiArt, qrToSvg } from './qr.ts';
 import { makeWebSocketHandlers, upgradeIfWebSocket } from './ws.ts';
 
-function parseArgs(argv: string[]): { port: number; dataDir: string } {
+function parseArgs(argv: string[]): { port: number; dataDir: string; resetAdmin: boolean } {
   let port = 8073;
   let dataDir = 'fdlog-data';
+  let resetAdmin = false;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--port' && argv[i + 1]) port = Number(argv[++i]);
     else if (argv[i] === '--data-dir' && argv[i + 1]) dataDir = argv[++i]!;
+    else if (argv[i] === '--reset-admin') resetAdmin = true;
   }
-  return { port, dataDir };
+  return { port, dataDir, resetAdmin };
 }
 
 function localLanIps(): string[] {
@@ -26,11 +30,31 @@ function localLanIps(): string[] {
   return ips;
 }
 
+function randomHex(byteCount: number): string {
+  const bytes = new Uint8Array(byteCount);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function main() {
-  const { port, dataDir } = parseArgs(process.argv.slice(2));
+  const { port, dataDir, resetAdmin } = parseArgs(process.argv.slice(2));
+
+  if (resetAdmin) {
+    await deleteAdmin(dataDir);
+    console.log('Admin configuration removed -- next /captain visit will run first-time setup.');
+    process.exit(0);
+  }
+
   const { state, seq } = await boot(dataDir);
-  const ctx: ServerContext = { dataDir, state, seq };
+  const admin = await readAdmin(dataDir);
+  const ctx: ServerContext = { dataDir, state, seq, admin };
   const deps: CommandDeps = { ctx, broadcast };
+
+  // Only used before first-run admin setup completes -- no valid session
+  // cookie can exist yet at that point, so its exact value doesn't matter,
+  // it just needs to be *some* per-process secret for signSession/upgrade
+  // consistency until ctx.admin is set.
+  const fallbackSessionSecret = randomHex(32);
 
   const wsHandlers = makeWebSocketHandlers(deps);
 
@@ -40,14 +64,14 @@ async function main() {
 
   const server = Bun.serve({
     port,
-    fetch(req, srv) {
-      return (
-        upgradeIfWebSocket(req, srv) ??
-        serveJournalBackup(req, dataDir) ??
-        serveLeaderboard(req, ctx) ??
-        serveQr(req, qrSvg) ??
-        serveStatic(req)
-      );
+    async fetch(req, srv) {
+      const wsResponse = upgradeIfWebSocket(req, srv, ctx.admin?.sessionSecret ?? fallbackSessionSecret);
+      if (wsResponse) return wsResponse;
+
+      const adminResponse = await serveAdminApi(req, ctx);
+      if (adminResponse) return adminResponse;
+
+      return serveJournalBackup(req, dataDir) ?? serveLeaderboard(req, ctx) ?? serveQr(req, qrSvg) ?? serveStatic(req);
     },
     websocket: wsHandlers,
   });

@@ -784,3 +784,40 @@ input.invalid {
   color: var(--success-fg);
   border-color: transparent;
 }
+
+/* ---- Captain's Station auth screens ---- */
+
+.captain-auth-screen {
+  max-width: 420px;
+  margin: 2rem auto;
+}
+
+.captain-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.captain-link-btn {
+  background: transparent;
+  color: var(--accent);
+  border: none;
+  min-height: auto;
+  padding: 0.25rem 0;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.captain-recovery-code {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-align: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  margin: 1rem 0;
+}

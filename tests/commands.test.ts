@@ -18,7 +18,7 @@ const dirsToClean: string[] = [];
 async function makeDeps(): Promise<CommandDeps> {
   const dataDir = await mkdtemp(join(tmpdir(), 'pdd-commands-'));
   dirsToClean.push(dataDir);
-  const ctx: ServerContext = { dataDir, state: createInitialState(), seq: 0 };
+  const ctx: ServerContext = { dataDir, state: createInitialState(), seq: 0, admin: null };
   ctx.state.config = {
     clubName: 'Test Club',
     clubCall: 'W1CLUB',
@@ -36,9 +36,14 @@ function makeConn(): Connection & { sent: ServerMessage[] } {
   const sent: ServerMessage[] = [];
   return {
     operatorCall: null,
+    isAdmin: false,
     send: (m: ServerMessage) => sent.push(m),
     sent,
   };
+}
+
+function makeAdminConn(): Connection & { sent: ServerMessage[] } {
+  return { ...makeConn(), isAdmin: true };
 }
 
 function newQso(overrides: Partial<NewQsoInput> = {}): NewQsoInput {
@@ -270,6 +275,38 @@ describe('qso:edit / qso:delete ownership (CO-4)', () => {
 
     await dispatch(deps, conn, { type: 'qso:delete', id });
     expect(deps.ctx.state.qsos.get(id)?.deleted).toBe(true);
+  });
+});
+
+describe('config:set / bonus:set admin gating (CO-5)', () => {
+  test('config:set rejects a non-admin connection', async () => {
+    const deps = await makeDeps();
+    const conn = makeConn();
+    await dispatch(deps, conn, { type: 'config:set', config: { ...deps.ctx.state.config!, clubName: 'Hacked' } });
+    expect((lastRejects(conn)[0] as any).reason).toBe('NOT_ADMIN');
+    expect(deps.ctx.state.config?.clubName).toBe('Test Club');
+  });
+
+  test('config:set succeeds for an admin connection', async () => {
+    const deps = await makeDeps();
+    const conn = makeAdminConn();
+    await dispatch(deps, conn, { type: 'config:set', config: { ...deps.ctx.state.config!, clubName: 'New Name' } });
+    expect(deps.ctx.state.config?.clubName).toBe('New Name');
+  });
+
+  test('bonus:set rejects a non-admin connection', async () => {
+    const deps = await makeDeps();
+    const conn = makeConn();
+    await dispatch(deps, conn, { type: 'bonus:set', bonusId: 'media-publicity', claim: { claimed: true } });
+    expect((lastRejects(conn)[0] as any).reason).toBe('NOT_ADMIN');
+    expect(deps.ctx.state.bonuses.get('media-publicity')).toBeUndefined();
+  });
+
+  test('bonus:set succeeds for an admin connection', async () => {
+    const deps = await makeDeps();
+    const conn = makeAdminConn();
+    await dispatch(deps, conn, { type: 'bonus:set', bonusId: 'media-publicity', claim: { claimed: true } });
+    expect(deps.ctx.state.bonuses.get('media-publicity')?.claimed).toBe(true);
   });
 });
 

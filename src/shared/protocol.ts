@@ -44,7 +44,8 @@ export type RejectReason =
   | 'NOT_YOUR_SLOT'
   | 'SLOT_TAKEN'
   | 'NOT_FOUND'
-  | 'NOT_YOUR_QSO';
+  | 'NOT_YOUR_QSO'
+  | 'NOT_ADMIN';
 
 export type ServerMessage =
   | { type: 'welcome'; you: Operator; serverNowUtc: string; state: FullState }

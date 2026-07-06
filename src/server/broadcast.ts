@@ -3,6 +3,11 @@ import type { ServerMessage } from '../shared/protocol.ts';
 
 export interface SocketData {
   operatorCall: string | null;
+  // Set once at WS upgrade time from the admin session cookie (session.ts's
+  // checkAdminCookie) -- independent of `hello`/operatorCall, so a captain
+  // is gated on admin-only actions regardless of whether they've signed in
+  // as an operator on this same connection.
+  isAdmin: boolean;
 }
 
 const sockets = new Set<ServerWebSocket<SocketData>>();

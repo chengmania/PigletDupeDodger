@@ -6,6 +6,7 @@ import type { ClientMessage, FullState, RejectReason, ServerMessage } from '../s
 import { isValidSectionCode } from '../shared/sections.ts';
 import type { Mode, Qso, StationKind } from '../shared/types.ts';
 import { isValidClass } from '../shared/validate.ts';
+import type { AdminRecord } from './admin-store.ts';
 import { appendEvent } from './journal-io.ts';
 
 const VALID_MODES: Mode[] = ['PH', 'CW', 'DIG'];
@@ -15,10 +16,14 @@ export interface ServerContext {
   dataDir: string;
   state: State;
   seq: number;
+  // Mutated in place by admin-http.ts on setup/reset, mirroring how
+  // ctx.state/ctx.seq are already mutated in place by append().
+  admin: AdminRecord | null;
 }
 
 export interface Connection {
   operatorCall: string | null;
+  readonly isAdmin: boolean;
   send: (message: ServerMessage) => void;
 }
 
@@ -268,7 +273,7 @@ export async function handleBonusSet(
   conn: Connection,
   msg: Extract<ClientMessage, { type: 'bonus:set' }>,
 ): Promise<void> {
-  if (!conn.operatorCall) return reject(conn, 'NOT_SIGNED_IN');
+  if (!conn.isAdmin) return reject(conn, 'NOT_ADMIN');
   await append(deps, { type: 'bonus:set', ts: new Date().toISOString(), bonusId: msg.bonusId, claim: msg.claim });
 }
 
@@ -277,6 +282,7 @@ export async function handleConfigSet(
   conn: Connection,
   msg: Extract<ClientMessage, { type: 'config:set' }>,
 ): Promise<void> {
+  if (!conn.isAdmin) return reject(conn, 'NOT_ADMIN');
   await append(deps, { type: 'config:set', ts: new Date().toISOString(), config: msg.config });
 }
 
