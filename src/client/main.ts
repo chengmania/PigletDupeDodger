@@ -1,8 +1,6 @@
 import * as connectScreen from './screens/connect.ts';
 import * as dashboardScreen from './screens/dashboard.ts';
-import * as exportsScreen from './screens/exports.ts';
 import * as gridScreen from './screens/grid.ts';
-import * as leaderboardScreen from './screens/leaderboard.ts';
 import * as logScreen from './screens/log.ts';
 import { mountBanner, updateBanner } from './banner.ts';
 import { mountCaptainApp } from './captain/captain-main.ts';
@@ -19,9 +17,6 @@ function currentRoute(): string {
 }
 
 function currentScreen(route: string): Screen {
-  // Public, no sign-in required -- this is the big-screen kiosk view.
-  if (route === '/leaderboard') return leaderboardScreen;
-
   const state = store.get();
   if (!state.you) return connectScreen;
 
@@ -30,8 +25,6 @@ function currentScreen(route: string): Screen {
       return logScreen;
     case '/dashboard':
       return dashboardScreen;
-    case '/exports':
-      return exportsScreen;
     case '/grid':
     default:
       return gridScreen;
@@ -113,13 +106,12 @@ function initOperatorApp(): void {
     const state = store.get();
     const route = currentRoute();
     // The effective screen identity must mirror currentScreen()'s own
-    // routing exactly: leaderboard bypasses the sign-in gate entirely, and
-    // everything else falls back to the connect screen when signed out.
+    // routing exactly: it falls back to the connect screen when signed out.
     // Tracking this as part of the mount key means a status change like
     // connecting->connected doesn't look like a screen change (so
     // connect.ts's in-progress form isn't wiped), while an actual screen
     // change always is one.
-    const key = route === '/leaderboard' ? route : state.you ? route : '__connect__';
+    const key = state.you ? route : '__connect__';
     const isNewMount = key !== mountedKey;
     mountedKey = key;
 

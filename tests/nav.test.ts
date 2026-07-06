@@ -22,8 +22,10 @@ describe('navLinks', () => {
     }
   });
 
-  test('never includes a Host Setup link', () => {
-    expect(navLinks(false).some((l) => l.href === '#/setup')).toBe(false);
-    expect(navLinks(true).some((l) => l.href === '#/setup')).toBe(false);
+  test('is exactly Grid, Log, Dashboard -- no Exports/Leaderboard/Host Setup', () => {
+    for (const hasReservation of [true, false]) {
+      const hrefs = navLinks(hasReservation).map((l) => l.href);
+      expect(hrefs).toEqual(['#/grid', '#/log', '#/dashboard']);
+    }
   });
 });

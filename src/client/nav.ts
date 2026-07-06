@@ -7,16 +7,14 @@ export interface NavLink {
 // Pure so the Log link's enabled state is recomputed fresh from live state
 // on every render, never a snapshot taken at mount time.
 //
-// Exports/Leaderboard are still included here -- those screens aren't
-// removed from the operator nav until CO-6 (a later Change Order
-// milestone). Host Setup is gone for good: club config/bonus checklist now
-// live exclusively under Captain's Station (/captain).
+// Exactly Grid|Log|Dashboard (CO-6): Exports/Leaderboard/Host Setup are all
+// gone from the operator nav -- exports and club config now live
+// exclusively under Captain's Station (/captain), and the dashboard itself
+// carries the live feed the leaderboard used to show (CO-7).
 export function navLinks(hasReservation: boolean): NavLink[] {
   return [
     { href: '#/grid', label: 'Grid', disabled: false },
     { href: '#/log', label: 'Log', disabled: !hasReservation },
     { href: '#/dashboard', label: 'Dashboard', disabled: false },
-    { href: '#/exports', label: 'Exports', disabled: false },
-    { href: '#/leaderboard', label: 'Leaderboard', disabled: false },
   ];
 }

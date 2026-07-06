@@ -3,7 +3,7 @@ import { deleteAdmin, readAdmin } from './admin-store.ts';
 import { serveAdminApi } from './admin-http.ts';
 import { broadcast } from './broadcast.ts';
 import type { CommandDeps, ServerContext } from './commands.ts';
-import { serveJournalBackup, serveLeaderboard, serveQr, serveStatic } from './http.ts';
+import { serveJournalBackup, serveQr, serveStatic } from './http.ts';
 import { boot, writeSnapshot, writeSnapshotIfDue } from './journal-io.ts';
 import { generateQrMatrix, qrToAsciiArt, qrToSvg } from './qr.ts';
 import { makeWebSocketHandlers, upgradeIfWebSocket } from './ws.ts';
@@ -71,7 +71,7 @@ async function main() {
       const adminResponse = await serveAdminApi(req, ctx);
       if (adminResponse) return adminResponse;
 
-      return serveJournalBackup(req, dataDir) ?? serveLeaderboard(req, ctx) ?? serveQr(req, qrSvg) ?? serveStatic(req);
+      return serveJournalBackup(req, dataDir) ?? serveQr(req, qrSvg) ?? serveStatic(req);
     },
     websocket: wsHandlers,
   });

@@ -1,7 +1,5 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { scoreLog } from '../shared/scoring.ts';
-import type { ServerContext } from './commands.ts';
 
 // Static `with { type: 'file' }` imports so Bun's bundler embeds the actual
 // file contents into the compiled binary at build time -- a dynamically
@@ -30,34 +28,6 @@ const STATIC_ROUTES: Record<string, { path: string; contentType: string }> = {
   '/app.js': { path: appJsPath as unknown as string, contentType: 'text/javascript; charset=utf-8' },
   '/section-map.svg': { path: sectionMapSvgPath as unknown as string, contentType: 'image/svg+xml' },
 };
-
-// Public, read-only leaderboard data -- no `hello` required, since this
-// powers a big-screen kiosk view facing visitors, not an operator session.
-export function serveLeaderboard(req: Request, ctx: ServerContext): Response | undefined {
-  const url = new URL(req.url);
-  if (url.pathname !== '/leaderboard.json') return undefined;
-
-  const { state } = ctx;
-  const qsos = [...state.qsos.values()];
-  const operators = [...state.operators.values()];
-  const score = state.config ? scoreLog(qsos, state.config, state.bonuses, operators) : null;
-
-  const recentQsos = qsos
-    .filter((q) => !q.deleted)
-    .sort((a, b) => b.ts.localeCompare(a.ts))
-    .slice(0, 10)
-    .map((q) => ({ ts: q.ts, call: q.call, band: q.band, mode: q.mode, station: q.station, operatorCall: q.operatorCall }));
-
-  const body = {
-    clubName: state.config?.clubName ?? null,
-    clubCall: state.config?.clubCall ?? null,
-    score,
-    recentQsos,
-    serverNowUtc: new Date().toISOString(),
-  };
-
-  return Response.json(body);
-}
 
 export function serveJournalBackup(req: Request, dataDir: string): Response | undefined {
   const url = new URL(req.url);

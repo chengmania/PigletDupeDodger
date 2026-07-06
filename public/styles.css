@@ -640,54 +640,6 @@ input.invalid {
   padding: 0.6rem 1rem;
 }
 
-/* ---- Leaderboard ---- */
-
-.leaderboard-screen {
-  text-align: center;
-}
-
-.leaderboard-total {
-  font-size: 4rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--accent);
-  font-family: var(--font-mono);
-}
-
-@media (min-width: 700px) {
-  .leaderboard-total {
-    font-size: 6rem;
-  }
-}
-
-.leaderboard-total-label {
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
-  margin-bottom: 1.5rem;
-}
-
-.leaderboard-stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1.25rem;
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-}
-
-@media (min-width: 700px) {
-  .leaderboard-stats {
-    gap: 2rem;
-    font-size: 1.3rem;
-  }
-}
-
-.leaderboard-ticker {
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: left;
-}
-
 /* ---- Log layout: entry form + section map side-by-side on desktop ---- */
 
 .log-layout {
