@@ -6,9 +6,11 @@ import * as hostSetupScreen from './screens/host-setup.ts';
 import * as leaderboardScreen from './screens/leaderboard.ts';
 import * as logScreen from './screens/log.ts';
 import { mountBanner, updateBanner } from './banner.ts';
+import { mountHeader } from './header.ts';
 import { isHostMode } from './host-mode.ts';
 import { navLinks } from './nav.ts';
 import { store } from './store.ts';
+import { initTheme } from './theme.ts';
 import { connect, onReserveConfirmed } from './ws-client.ts';
 
 type Screen = { render: (container: HTMLElement, isNewMount: boolean) => void };
@@ -48,9 +50,12 @@ function hasReservation(): boolean {
   return false;
 }
 
+initTheme();
+
 const appRoot = document.getElementById('app')!;
 appRoot.innerHTML = '';
 mountBanner(appRoot);
+mountHeader(appRoot);
 const nav = document.createElement('nav');
 nav.className = 'app-nav';
 const content = document.createElement('div');
