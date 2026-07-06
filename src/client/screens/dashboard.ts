@@ -6,9 +6,8 @@ import { store } from '../store.ts';
 
 const MODES: Mode[] = ['PH', 'CW', 'DIG'];
 
-export function render(container: HTMLElement): void {
+export function render(container: HTMLElement, _isNewMount: boolean): void {
   container.innerHTML = '';
-  container.dataset.screen = 'dashboard';
 
   const root = document.createElement('div');
   root.className = 'screen dashboard-screen';

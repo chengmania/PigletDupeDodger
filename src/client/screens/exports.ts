@@ -15,9 +15,8 @@ function downloadBlob(filename: string, content: string, mimeType: string): void
   URL.revokeObjectURL(url);
 }
 
-export function render(container: HTMLElement): void {
+export function render(container: HTMLElement, _isNewMount: boolean): void {
   container.innerHTML = '';
-  container.dataset.screen = 'exports';
 
   const root = document.createElement('div');
   root.className = 'screen exports-screen';

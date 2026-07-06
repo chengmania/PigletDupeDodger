@@ -6,7 +6,10 @@ import { send } from '../ws-client.ts';
 
 const MODES: Mode[] = ['PH', 'CW', 'DIG'];
 
-export function render(container: HTMLElement): void {
+// Grid has no focusable text inputs holding in-progress user typing, so
+// unlike log.ts/host-setup.ts it's exempt from the isNewMount-gated rebuild
+// pattern -- a full rebuild on every store update is safe and simplest here.
+export function render(container: HTMLElement, _isNewMount: boolean): void {
   const state = store.get();
   const you = state.you?.call ?? null;
   container.innerHTML = '';

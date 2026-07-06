@@ -1,5 +1,7 @@
+import type { JournalEvent } from '../shared/journal.ts';
 import { applyEvent } from '../shared/journal.ts';
 import { fullStateToState, type ClientMessage, type ServerMessage } from '../shared/protocol.ts';
+import type { Mode, StationKind } from '../shared/types.ts';
 import { enqueue, flush } from './outbox.ts';
 import { store } from './store.ts';
 
@@ -23,6 +25,27 @@ const qsoAddListeners = new Set<(outcome: QsoAddOutcome) => void>();
 export function onQsoAddOutcome(fn: (outcome: QsoAddOutcome) => void): () => void {
   qsoAddListeners.add(fn);
   return () => qsoAddListeners.delete(fn);
+}
+
+// Lets the router auto-navigate to the Log screen the instant a reservation
+// you made is confirmed, instead of requiring a manual nav click.
+export interface ReserveOutcome {
+  band: string;
+  mode: Mode;
+  station: StationKind;
+}
+const reserveListeners = new Set<(outcome: ReserveOutcome) => void>();
+
+export function onReserveConfirmed(fn: (outcome: ReserveOutcome) => void): () => void {
+  reserveListeners.add(fn);
+  return () => reserveListeners.delete(fn);
+}
+
+// Pure so it's directly testable: only a 'slot:reserve' event for the given
+// operator's own call counts as "your reservation was just confirmed".
+export function isMyReserveConfirm(event: JournalEvent, youCall: string | null): ReserveOutcome | null {
+  if (event.type !== 'slot:reserve' || !youCall || event.operatorCall !== youCall) return null;
+  return { band: event.band, mode: event.mode, station: event.station };
 }
 
 export function connect(targetUrl: string): void {
@@ -117,6 +140,10 @@ function handleServerMessage(msg: ServerMessage): void {
       store.set({ data: applyEvent(current.data, msg.event), seq: msg.seq });
       if (msg.event.type === 'qso:add') {
         for (const fn of qsoAddListeners) fn({ clientId: msg.event.clientId, ok: true });
+      }
+      const reserveOutcome = isMyReserveConfirm(msg.event, current.you?.call ?? null);
+      if (reserveOutcome) {
+        for (const fn of reserveListeners) fn(reserveOutcome);
       }
       break;
     }

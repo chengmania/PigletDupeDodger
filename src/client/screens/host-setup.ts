@@ -24,8 +24,8 @@ let configEls: ConfigEls | null = null;
 let checklistRoot: HTMLElement | null = null;
 let lastBonusesSnapshot = '';
 
-export function render(container: HTMLElement): void {
-  if (container.dataset.screen !== 'host-setup' || !configEls) {
+export function render(container: HTMLElement, isNewMount: boolean): void {
+  if (isNewMount || !configEls) {
     build(container);
   }
   refreshChecklistIfChanged();
@@ -33,7 +33,6 @@ export function render(container: HTMLElement): void {
 
 function build(container: HTMLElement): void {
   container.innerHTML = '';
-  container.dataset.screen = 'host-setup';
   configEls = null;
   checklistRoot = null;
   lastBonusesSnapshot = '';

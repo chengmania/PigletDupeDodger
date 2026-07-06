@@ -1,8 +1,22 @@
 import { send } from '../ws-client.ts';
 import { store } from '../store.ts';
 
-export function render(container: HTMLElement): void {
-  const state = store.get();
+interface Els {
+  status: HTMLElement;
+  club: HTMLElement;
+  onlineCount: HTMLElement;
+}
+
+let els: Els | null = null;
+
+export function render(container: HTMLElement, isNewMount: boolean): void {
+  if (isNewMount || !els) {
+    buildForm(container);
+  }
+  updateStatus();
+}
+
+function buildForm(container: HTMLElement): void {
   container.innerHTML = '';
 
   const wrapper = document.createElement('div');
@@ -13,18 +27,12 @@ export function render(container: HTMLElement): void {
   wrapper.appendChild(title);
 
   const status = document.createElement('p');
-  status.className = `status status-${state.connection}`;
-  status.textContent = `Status: ${state.connection}`;
   wrapper.appendChild(status);
 
-  if (state.data.config) {
-    const club = document.createElement('p');
-    club.textContent = `${state.data.config.clubName} (${state.data.config.clubCall})`;
-    wrapper.appendChild(club);
-  }
+  const club = document.createElement('p');
+  wrapper.appendChild(club);
 
   const onlineCount = document.createElement('p');
-  onlineCount.textContent = `${state.data.operators.size} operator(s) known`;
   wrapper.appendChild(onlineCount);
 
   const qr = document.createElement('img');
@@ -71,4 +79,18 @@ export function render(container: HTMLElement): void {
 
   wrapper.appendChild(form);
   container.appendChild(wrapper);
+
+  els = { status, club, onlineCount };
+}
+
+function updateStatus(): void {
+  if (!els) return;
+  const state = store.get();
+
+  els.status.className = `status status-${state.connection}`;
+  els.status.textContent = `Status: ${state.connection}`;
+
+  els.club.textContent = state.data.config ? `${state.data.config.clubName} (${state.data.config.clubCall})` : '';
+
+  els.onlineCount.textContent = `${state.data.operators.size} operator(s) known`;
 }

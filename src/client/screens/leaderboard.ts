@@ -12,10 +12,9 @@ interface LeaderboardResponse {
 const POLL_INTERVAL_MS = 4_000;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-export function render(container: HTMLElement): void {
-  if (container.dataset.screen === 'leaderboard') return; // already mounted, polling loop keeps it fresh
+export function render(container: HTMLElement, isNewMount: boolean): void {
+  if (!isNewMount) return; // already mounted, polling loop keeps it fresh
   container.innerHTML = '';
-  container.dataset.screen = 'leaderboard';
 
   const root = document.createElement('div');
   root.className = 'screen leaderboard-screen';

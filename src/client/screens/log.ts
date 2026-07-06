@@ -46,8 +46,8 @@ function parseContextKey(key: string): Context {
   return { station: station as StationKind, band: band!, mode: mode as Mode };
 }
 
-export function render(container: HTMLElement): void {
-  if (container.dataset.screen !== 'log' || !els) {
+export function render(container: HTMLElement, isNewMount: boolean): void {
+  if (isNewMount || !els) {
     buildForm(container);
   }
   updateDynamic();
@@ -55,7 +55,6 @@ export function render(container: HTMLElement): void {
 
 function buildForm(container: HTMLElement): void {
   container.innerHTML = '';
-  container.dataset.screen = 'log';
   pending.clear();
   unsubscribeOutcomes?.();
 
