@@ -1,0 +1,138 @@
+:root {
+  --bg: #14171c;
+  --bg-elevated: #1d2129;
+  --text: #e7ebf0;
+  --text-dim: #9aa4b2;
+  --border: #2c313a;
+  --accent: #4da3ff;
+  --open: #2e7d32;
+  --open-fg: #eaffea;
+  --taken: #8a6d00;
+  --taken-fg: #fff6dc;
+  --yours: #1565c0;
+  --yours-fg: #eaf3ff;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f6f8;
+    --bg-elevated: #ffffff;
+    --text: #1a1d22;
+    --text-dim: #565f6b;
+    --border: #d8dde3;
+    --accent: #1565c0;
+    --open: #2e7d32;
+    --open-fg: #ffffff;
+    --taken: #b8860b;
+    --taken-fg: #241a00;
+    --yours: #1565c0;
+    --yours-fg: #ffffff;
+    color-scheme: light;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+#app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+.status {
+  font-weight: 600;
+}
+
+.status-connected {
+  color: var(--open);
+}
+
+.status-offline {
+  color: var(--taken);
+}
+
+.connect-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 320px;
+}
+
+.connect-form input,
+.connect-form button,
+.gota-controls select,
+.gota-controls button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.connect-form button,
+.gota-controls button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.reservation-grid {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.reservation-grid th,
+.reservation-grid td {
+  border: 1px solid var(--border);
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.cell {
+  display: inline-block;
+  min-width: 5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cell-open {
+  background: var(--open);
+  color: var(--open-fg);
+}
+
+.cell-taken {
+  background: var(--taken);
+  color: var(--taken-fg);
+  cursor: default;
+}
+
+.cell-yours {
+  background: var(--yours);
+  color: var(--yours-fg);
+}
+
+.gota-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}

@@ -1,4 +1,4 @@
-import type { JournalEvent } from './journal.ts';
+import { createInitialState, reservationKey, type JournalEvent, type State } from './journal.ts';
 import type { BonusClaim, ClubConfig, Mode, Operator, Qso, Reservation, StationKind } from './types.ts';
 
 export type NewQsoInput = Omit<Qso, 'id' | 'ts' | 'operatorCall' | 'deleted'>;
@@ -44,3 +44,16 @@ export type ServerMessage =
   | { type: 'event'; event: JournalEvent; seq: number }
   | { type: 'reject'; reason: RejectReason; clientId?: string; refType?: ClientMessage['type'] }
   | { type: 'pong'; t: number; serverNowUtc: string };
+
+// Rebuilds the Map-based fold State from a wire-transmitted FullState
+// snapshot, so clients can reuse the same shared applyEvent()/checkDupe()/
+// scoreLog() engines the server uses, instead of a parallel reimplementation.
+export function fullStateToState(full: FullState): State {
+  const state = createInitialState();
+  state.config = full.config;
+  for (const op of full.operators) state.operators.set(op.call, op);
+  for (const res of full.reservations) state.reservations.set(reservationKey(res.station, res.band, res.mode), res);
+  for (const qso of full.qsos) state.qsos.set(qso.id, qso);
+  for (const [bonusId, claim] of Object.entries(full.bonuses)) state.bonuses.set(bonusId, claim);
+  return state;
+}
