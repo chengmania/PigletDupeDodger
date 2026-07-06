@@ -1,7 +1,7 @@
 import { BAND_IDS } from '../shared/bands.ts';
 import { checkDupe, normalizeCall } from '../shared/dupe.ts';
 import { generateId } from '../shared/id.ts';
-import { applyEvent, reservationKey, type State } from '../shared/journal.ts';
+import { applyEvent, reservationKey, type JournalEvent, type State } from '../shared/journal.ts';
 import type { ClientMessage, FullState, RejectReason, ServerMessage } from '../shared/protocol.ts';
 import { isValidSectionCode } from '../shared/sections.ts';
 import type { Mode, Qso, StationKind } from '../shared/types.ts';
@@ -192,6 +192,10 @@ export async function handleQsoAdd(
     ts,
     operatorCall: conn.operatorCall,
     queued: !!msg.queued,
+    // Only reachable here with dupe.status === 'DUPE' when override was
+    // true (any other DUPE case already rejected above). Hybrid two-press
+    // logging: this QSO still gets logged, just flagged 0-point/excluded.
+    dupe: dupe.status === 'DUPE',
   };
 
   await append(deps, { type: 'qso:add', ts, qso, clientId: msg.clientId });
@@ -212,8 +216,38 @@ export async function handleQsoEdit(
   msg: Extract<ClientMessage, { type: 'qso:edit' }>,
 ): Promise<void> {
   if (!conn.operatorCall) return reject(conn, 'NOT_SIGNED_IN');
-  if (!deps.ctx.state.qsos.has(msg.id)) return reject(conn, 'NOT_FOUND');
-  await append(deps, { type: 'qso:edit', ts: new Date().toISOString(), id: msg.id, patch: msg.patch });
+  const existing = deps.ctx.state.qsos.get(msg.id);
+  if (!existing) return reject(conn, 'NOT_FOUND');
+
+  // If the edit touches any dupe-key field, re-run checkDupe against the
+  // rest of the log (excluding this QSO) with the merged new values and
+  // fold the recomputed flag into the same journal event. This handles both
+  // directions -- un-duping (call corrected to something fresh) and newly
+  // duping (edited into collision with another QSO) -- from one code path.
+  // scoreLog() is always computed fresh from current state, so there's no
+  // separate "rescore" step once the flag updates.
+  let patch: Extract<JournalEvent, { type: 'qso:edit' }>['patch'] = msg.patch;
+  const touchesDupeKey = !existing.deleted && (msg.patch.call !== undefined || msg.patch.band !== undefined || msg.patch.mode !== undefined);
+  if (touchesDupeKey) {
+    const merged = { ...existing, ...msg.patch };
+    const config = deps.ctx.state.config ?? { clubCall: '', gotaCall: undefined };
+    const others = [...deps.ctx.state.qsos.values()].filter((q) => q.id !== msg.id);
+    const result = checkDupe(
+      {
+        call: merged.call,
+        band: merged.band,
+        mode: merged.mode,
+        station: merged.station,
+        satelliteName: merged.satelliteName,
+        satelliteSingleChannelFm: merged.satelliteSingleChannelFm,
+      },
+      others,
+      config,
+    );
+    patch = { ...msg.patch, dupe: result.status === 'DUPE' };
+  }
+
+  await append(deps, { type: 'qso:edit', ts: new Date().toISOString(), id: msg.id, patch });
 }
 
 export async function handleQsoDelete(

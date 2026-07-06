@@ -128,6 +128,28 @@ describe('qso:add', () => {
     expect(deps.ctx.state.qsos.size).toBe(2);
   });
 
+  test('overriding a DUPE persists dupe:true on the stored QSO (CO-8)', async () => {
+    const deps = await makeDeps();
+    const conn = await signIn(deps, 'W1OP');
+    await dispatch(deps, conn, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c1', qso: newQso() });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c2', qso: newQso(), override: true });
+
+    const firstId = deps.ctx.state.qsoIdByClientId.get('c1')!;
+    const secondId = deps.ctx.state.qsoIdByClientId.get('c2')!;
+    expect(deps.ctx.state.qsos.get(firstId)?.dupe).toBeFalsy();
+    expect(deps.ctx.state.qsos.get(secondId)?.dupe).toBe(true);
+  });
+
+  test('a NEW qso has no dupe flag', async () => {
+    const deps = await makeDeps();
+    const conn = await signIn(deps, 'W1OP');
+    await dispatch(deps, conn, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c1', qso: newQso() });
+    const qso = [...deps.ctx.state.qsos.values()][0];
+    expect(qso?.dupe).toBeFalsy();
+  });
+
   test('satellite QSO auto-claims the satellite bonus', async () => {
     const deps = await makeDeps();
     const conn = await signIn(deps, 'W1OP');
@@ -159,6 +181,53 @@ describe('qso:add', () => {
       qso: newQso({ call: 'W3DEF', band: 'SAT', satelliteName: 'SO-50', satelliteSingleChannelFm: true }),
     });
     expect((lastRejects(connB)[0] as any).reason).toBe('SAT_LIMIT');
+  });
+});
+
+describe('qso:edit dupe recompute (CO-8)', () => {
+  test('editing a dupe-flagged QSO\'s call to a fresh value clears the flag', async () => {
+    const deps = await makeDeps();
+    const conn = await signIn(deps, 'W1OP');
+    await dispatch(deps, conn, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c1', qso: newQso({ call: 'W2ABC' }) });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c2', qso: newQso({ call: 'W2ABC' }), override: true });
+
+    const dupeId = deps.ctx.state.qsoIdByClientId.get('c2')!;
+    expect(deps.ctx.state.qsos.get(dupeId)?.dupe).toBe(true);
+
+    await dispatch(deps, conn, { type: 'qso:edit', id: dupeId, patch: { call: 'W3FRESH' } });
+    expect(deps.ctx.state.qsos.get(dupeId)?.dupe).toBe(false);
+    expect(deps.ctx.state.qsos.get(dupeId)?.call).toBe('W3FRESH');
+  });
+
+  test('editing a clean QSO\'s call into collision with another QSO sets the flag', async () => {
+    const deps = await makeDeps();
+    const conn = await signIn(deps, 'W1OP');
+    await dispatch(deps, conn, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c1', qso: newQso({ call: 'W2ABC' }) });
+    // A different call on the same band/mode/station is not a dupe of c1 --
+    // dupe keys are per-callsign, not per-slot -- so this logs clean.
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c2', qso: newQso({ call: 'W3OTHER' }) });
+
+    const cleanId = deps.ctx.state.qsoIdByClientId.get('c2')!;
+    expect(deps.ctx.state.qsos.get(cleanId)?.dupe).toBeFalsy();
+
+    // Now edit c2's call to collide with c1's -- this should flag it.
+    await dispatch(deps, conn, { type: 'qso:edit', id: cleanId, patch: { call: 'W2ABC' } });
+    expect(deps.ctx.state.qsos.get(cleanId)?.dupe).toBe(true);
+  });
+
+  test('editing only class/section (no call/band/mode) leaves the dupe flag untouched', async () => {
+    const deps = await makeDeps();
+    const conn = await signIn(deps, 'W1OP');
+    await dispatch(deps, conn, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c1', qso: newQso({ call: 'W2ABC' }) });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c2', qso: newQso({ call: 'W2ABC' }), override: true });
+
+    const dupeId = deps.ctx.state.qsoIdByClientId.get('c2')!;
+    await dispatch(deps, conn, { type: 'qso:edit', id: dupeId, patch: { exchSection: 'WPA' } });
+    expect(deps.ctx.state.qsos.get(dupeId)?.dupe).toBe(true);
+    expect(deps.ctx.state.qsos.get(dupeId)?.exchSection).toBe('WPA');
   });
 });
 

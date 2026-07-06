@@ -25,6 +25,15 @@ export function isInEventWindow(qso: Qso, config: Pick<ClubConfig, 'eventStartUt
   return ts >= start && ts <= end;
 }
 
+// Shared eligibility predicate reused by scoreLog() and the Cabrillo/summary
+// exporters, so dupe-flagged QSOs (0 points, hybrid two-press logging) are
+// excluded from scoring and those exports uniformly. Deliberately NOT used
+// by the dupe sheet (which never window-filters) or by the section-activity
+// map (which counts dupes as real activity, not a scoring artifact).
+export function isScoreEligible(qso: Qso, config: Pick<ClubConfig, 'eventStartUtc' | 'eventEndUtc'>, opts: ScoreLogOpts = {}): boolean {
+  return !qso.deleted && !qso.dupe && (opts.includeOutOfWindow || isInEventWindow(qso, config));
+}
+
 function bump(record: Record<string, { count: number; qsoPoints: number }>, key: string, points: number): void {
   const existing = record[key] ?? { count: 0, qsoPoints: 0 };
   existing.count += 1;
@@ -43,7 +52,7 @@ export function scoreLog(
   operators: readonly Operator[],
   opts: ScoreLogOpts = {},
 ): ScoreBreakdown {
-  const eligible = qsos.filter((q) => !q.deleted && (opts.includeOutOfWindow || isInEventWindow(q, config)));
+  const eligible = qsos.filter((q) => isScoreEligible(q, config, opts));
 
   const perBand: Record<string, { count: number; qsoPoints: number }> = {};
   const perMode: Partial<Record<Mode, { count: number; qsoPoints: number }>> = {};

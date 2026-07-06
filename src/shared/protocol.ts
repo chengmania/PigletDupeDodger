@@ -1,7 +1,13 @@
 import { createInitialState, reservationKey, type JournalEvent, type State } from './journal.ts';
 import type { BonusClaim, ClubConfig, Mode, Operator, Qso, Reservation, StationKind } from './types.ts';
 
-export type NewQsoInput = Omit<Qso, 'id' | 'ts' | 'operatorCall' | 'deleted'>;
+// 'dupe' is explicitly excluded here (not just left out of a Pick allow-list
+// like QsoEditPatch below) -- Omit only removes what's named, and without
+// this, adding `dupe?: boolean` to Qso would have silently made it
+// client-settable on every qso:add. Only the server may set it.
+export type NewQsoInput = Omit<Qso, 'id' | 'ts' | 'operatorCall' | 'deleted' | 'dupe'>;
+// 'dupe' is likewise never part of this allow-list -- only the server's
+// recompute in handleQsoEdit may include it in the journal event's patch.
 export type QsoEditPatch = Partial<
   Pick<Qso, 'exchClass' | 'exchSection' | 'band' | 'mode' | 'call' | 'satelliteName' | 'satelliteSingleChannelFm' | 'gotaCoached'>
 >;

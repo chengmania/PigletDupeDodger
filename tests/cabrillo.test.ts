@@ -52,4 +52,11 @@ describe('toCabrilloLog', () => {
     const log = toCabrilloLog(qsos, config);
     expect(log.split('\n').filter((l) => l.startsWith('QSO:'))).toHaveLength(0);
   });
+
+  test('excludes dupe-flagged QSOs (CO-8 hybrid two-press logging)', () => {
+    const config = makeConfig();
+    const qsos = [makeQso({ dupe: true })];
+    const log = toCabrilloLog(qsos, config);
+    expect(log.split('\n').filter((l) => l.startsWith('QSO:'))).toHaveLength(0);
+  });
 });

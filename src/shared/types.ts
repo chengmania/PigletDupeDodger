@@ -51,6 +51,12 @@ export interface Qso {
   // Set when this QSO's ts came from a client's offline outbox rather than
   // being stamped by the server on receipt (spec section 10).
   queued?: boolean;
+  // Server-computed only (never client-settable, see protocol.ts): true when
+  // this QSO was logged (or edited into) an already-worked exact key
+  // (call+band+mode+station) and explicitly confirmed "log anyway". Scores 0
+  // points and is excluded from scoring/Cabrillo/dupe-sheet, but stays
+  // visible (with a badge) and is kept in the JSON backup.
+  dupe?: boolean;
 }
 
 export interface BonusClaim {

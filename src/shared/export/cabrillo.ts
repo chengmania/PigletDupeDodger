@@ -1,5 +1,5 @@
 import { getBand } from '../bands.ts';
-import { isInEventWindow } from '../scoring.ts';
+import { isScoreEligible } from '../scoring.ts';
 import type { ClubConfig, Mode, Qso } from '../types.ts';
 
 // Cabrillo 3.0 mode tokens (spec section 9): PH/CW/DG.
@@ -24,7 +24,7 @@ export function toCabrilloLog(qsos: readonly Qso[], config: ClubConfig): string 
   lines.push(`LOCATION: ${config.section}`);
   lines.push(`CLUB: ${config.clubName}`);
 
-  const eligible = qsos.filter((q) => !q.deleted && isInEventWindow(q, config));
+  const eligible = qsos.filter((q) => isScoreEligible(q, config));
   const sorted = [...eligible].sort((a, b) => a.ts.localeCompare(b.ts));
 
   for (const q of sorted) {

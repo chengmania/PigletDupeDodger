@@ -1,5 +1,5 @@
 import { BONUS_CATALOG } from '../bonuses.ts';
-import { isInEventWindow, scoreLog, type ScoreBreakdown } from '../scoring.ts';
+import { isScoreEligible, scoreLog, type ScoreBreakdown } from '../scoring.ts';
 import type { BonusClaim, ClubConfig, Operator, Qso } from '../types.ts';
 
 export interface OperatorSummary {
@@ -33,7 +33,7 @@ export function toSummaryReport(
   operators: readonly Operator[],
 ): SummaryReport {
   const score = scoreLog(qsos, config, bonuses, operators);
-  const eligibleQsos = qsos.filter((q) => !q.deleted && isInEventWindow(q, config));
+  const eligibleQsos = qsos.filter((q) => isScoreEligible(q, config));
 
   const operatorSummaries: OperatorSummary[] = operators.map((op) => {
     const opQsos = eligibleQsos.filter((q) => q.operatorCall === op.call);

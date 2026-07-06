@@ -11,10 +11,21 @@ export type JournalEvent =
       type: 'qso:edit';
       ts: string;
       id: string;
+      // 'dupe' is server-computed only (see commands.ts::handleQsoEdit) --
+      // the client-facing QsoEditPatch in protocol.ts deliberately excludes
+      // it, so a client can never set/clear its own dupe flag directly.
       patch: Partial<
         Pick<
           Qso,
-          'exchClass' | 'exchSection' | 'band' | 'mode' | 'call' | 'satelliteName' | 'satelliteSingleChannelFm' | 'gotaCoached'
+          | 'exchClass'
+          | 'exchSection'
+          | 'band'
+          | 'mode'
+          | 'call'
+          | 'satelliteName'
+          | 'satelliteSingleChannelFm'
+          | 'gotaCoached'
+          | 'dupe'
         >
       >;
     }

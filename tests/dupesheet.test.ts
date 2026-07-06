@@ -23,6 +23,11 @@ describe('sortedForDupeSheet', () => {
     const qsos = [makeQso({ deleted: true })];
     expect(sortedForDupeSheet(qsos)).toHaveLength(0);
   });
+
+  test('excludes dupe-flagged QSOs (CO-8 hybrid two-press logging)', () => {
+    const qsos = [makeQso({ dupe: true })];
+    expect(sortedForDupeSheet(qsos)).toHaveLength(0);
+  });
 });
 
 describe('toDupeSheetCsv', () => {

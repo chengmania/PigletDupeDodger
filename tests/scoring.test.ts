@@ -177,6 +177,13 @@ describe('scoreLog -- filtering', () => {
     expect(Object.keys(r.perOperator)).toHaveLength(0);
   });
 
+  test('dupe-flagged QSOs are excluded everywhere (CO-8 hybrid two-press logging)', () => {
+    const r = scoreLog([makeQso({ dupe: true })], makeConfig(), new Map(), []);
+    expect(r.qsoPoints).toBe(0);
+    expect(Object.keys(r.perBand)).toHaveLength(0);
+    expect(Object.keys(r.perOperator)).toHaveLength(0);
+  });
+
   test('out-of-window QSOs excluded by default', () => {
     const config = makeConfig();
     const early = makeQso({ ts: '2020-01-01T00:00:00.000Z' });

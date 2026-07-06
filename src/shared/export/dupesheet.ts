@@ -11,7 +11,7 @@ function bandSortIndex(bandId: string): number {
 // Rule 8.3.2.1: stations worked, sorted by band then mode, alpha order.
 export function sortedForDupeSheet(qsos: readonly Qso[]): Qso[] {
   return [...qsos]
-    .filter((q) => !q.deleted)
+    .filter((q) => !q.deleted && !q.dupe)
     .sort((a, b) => {
       const bandDiff = bandSortIndex(a.band) - bandSortIndex(b.band);
       if (bandDiff !== 0) return bandDiff;
