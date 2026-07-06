@@ -6,6 +6,10 @@ any browser on the local WiFi network. No internet is ever required, at the site
 
 73, and may your dupes always be dodged.
 
+**[Download the latest release](https://github.com/chengmania/PigletDupeDodger/releases/latest)** --
+prebuilt binaries for Windows, Mac (Apple Silicon + Intel), and Linux. No install, no
+dependencies, no internet connection needed.
+
 ## Screenshots
 
 |                                                                          |                                                                                        |
@@ -19,7 +23,8 @@ any browser on the local WiFi network. No internet is ever required, at the site
 
 ## Tent-ready quick start
 
-1. **Copy the program onto whatever computer will act as the host** -- a laptop, desktop, or
+1. **[Download the latest release](https://github.com/chengmania/PigletDupeDodger/releases/latest)
+   and copy the binary onto whatever computer will act as the host** -- a laptop, desktop, or
    something like a Raspberry Pi. It doesn't need internet access -- it just needs to be on the
    same WiFi network the operator stations will use (bring your own travel router if the site has
    no WiFi).
