@@ -2,6 +2,7 @@ import type { JournalEvent } from '../shared/journal.ts';
 import { applyEvent } from '../shared/journal.ts';
 import { fullStateToState, type ClientMessage, type ServerMessage } from '../shared/protocol.ts';
 import type { Mode, StationKind } from '../shared/types.ts';
+import { clearIdentity, loadIdentity } from './identity.ts';
 import { enqueue, flush } from './outbox.ts';
 import { store } from './store.ts';
 
@@ -72,7 +73,15 @@ function openSocket(): void {
     // be accepted. Message order on a single WebSocket is preserved, so the
     // outbox flush right after is guaranteed to land after the re-hello.
     const you = store.get().you;
-    if (you) rawSend({ type: 'hello', operatorCall: you.call });
+    if (you) {
+      rawSend({ type: 'hello', operatorCall: you.call });
+    } else {
+      // First connection of a fresh page load: replay a saved identity (if
+      // any) so a browser refresh resumes the same session instead of
+      // dropping back to the connect screen.
+      const saved = loadIdentity();
+      if (saved) rawSend({ type: 'hello', operatorCall: saved.call, name: saved.name, age18OrUnder: saved.age18OrUnder });
+    }
     flush(rawSend);
 
     if (pingTimer) clearInterval(pingTimer);
@@ -121,6 +130,25 @@ export function send(msg: ClientMessage): void {
   } else {
     enqueue(msg);
   }
+}
+
+// Explicit sign-out (distinct from a dropped connection, which intentionally
+// never releases slots -- a lost WiFi connection doesn't mean the
+// transmitter went silent). Signing out means you're actually done
+// operating, so any band/mode slots you're holding get released for the
+// next person.
+export function signOut(): void {
+  const state = store.get();
+  const you = state.you;
+  if (you) {
+    for (const r of state.data.reservations.values()) {
+      if (r.operatorCall !== you.call) continue;
+      if (r.station === 'GOTA') send({ type: 'release', station: 'GOTA' });
+      else send({ type: 'release', station: 'MAIN', band: r.band, mode: r.mode });
+    }
+  }
+  clearIdentity();
+  store.set({ you: null });
 }
 
 function handleServerMessage(msg: ServerMessage): void {

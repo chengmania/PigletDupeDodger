@@ -1,5 +1,6 @@
-import { send } from '../ws-client.ts';
+import { saveIdentity } from '../identity.ts';
 import { store } from '../store.ts';
+import { send } from '../ws-client.ts';
 
 interface Els {
   status: HTMLElement;
@@ -69,12 +70,13 @@ function buildForm(container: HTMLElement): void {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!callInput.value.trim()) return;
-    send({
-      type: 'hello',
-      operatorCall: callInput.value,
+    const identity = {
+      call: callInput.value,
       name: nameInput.value.trim() || undefined,
       age18OrUnder: ageInput.checked || undefined,
-    });
+    };
+    saveIdentity(identity);
+    send({ type: 'hello', operatorCall: identity.call, name: identity.name, age18OrUnder: identity.age18OrUnder });
   });
 
   wrapper.appendChild(form);

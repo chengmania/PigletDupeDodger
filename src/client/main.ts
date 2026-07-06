@@ -8,7 +8,7 @@ import { mountHeader } from './header.ts';
 import { navLinks } from './nav.ts';
 import { store } from './store.ts';
 import { initTheme } from './theme.ts';
-import { connect, onReserveConfirmed } from './ws-client.ts';
+import { connect, onReserveConfirmed, signOut } from './ws-client.ts';
 
 type Screen = { render: (container: HTMLElement, isNewMount: boolean) => void };
 
@@ -49,9 +49,24 @@ function initOperatorApp(): void {
   mountHeader(appRoot);
   const nav = document.createElement('nav');
   nav.className = 'app-nav';
+
+  const sessionBar = document.createElement('div');
+  sessionBar.className = 'session-bar hidden';
+  const sessionText = document.createElement('span');
+  sessionBar.appendChild(sessionText);
+  const logoutBtn = document.createElement('button');
+  logoutBtn.type = 'button';
+  logoutBtn.className = 'session-logout';
+  logoutBtn.textContent = 'Log Out';
+  logoutBtn.addEventListener('click', () => {
+    if (!window.confirm("Log out? This releases any band/mode slots you're holding.")) return;
+    signOut();
+  });
+  sessionBar.appendChild(logoutBtn);
+
   const content = document.createElement('div');
   content.className = 'app-content';
-  appRoot.append(nav, content);
+  appRoot.append(nav, sessionBar, content);
 
   // Diff-and-patch instead of a full teardown/rebuild on every store update
   // -- rebuilding fresh <a> elements on every broadcast created a window
@@ -99,6 +114,12 @@ function initOperatorApp(): void {
     }
   }
 
+  function renderSessionBar(): void {
+    const state = store.get();
+    sessionBar.classList.toggle('hidden', !state.you);
+    if (state.you) sessionText.textContent = `Signed in as ${state.you.call}`;
+  }
+
   let mountedKey: string | null = null;
 
   function rerender(): void {
@@ -116,6 +137,7 @@ function initOperatorApp(): void {
     mountedKey = key;
 
     renderNav();
+    renderSessionBar();
     currentScreen(route).render(content, isNewMount);
   }
 
