@@ -2,13 +2,11 @@ import * as connectScreen from './screens/connect.ts';
 import * as dashboardScreen from './screens/dashboard.ts';
 import * as exportsScreen from './screens/exports.ts';
 import * as gridScreen from './screens/grid.ts';
-import * as hostSetupScreen from './screens/host-setup.ts';
 import * as leaderboardScreen from './screens/leaderboard.ts';
 import * as logScreen from './screens/log.ts';
 import { mountBanner, updateBanner } from './banner.ts';
 import { mountCaptainApp } from './captain/captain-main.ts';
 import { mountHeader } from './header.ts';
-import { isHostMode } from './host-mode.ts';
 import { navLinks } from './nav.ts';
 import { store } from './store.ts';
 import { initTheme } from './theme.ts';
@@ -34,8 +32,6 @@ function currentScreen(route: string): Screen {
       return dashboardScreen;
     case '/exports':
       return exportsScreen;
-    case '/setup':
-      return hostSetupScreen;
     case '/grid':
     default:
       return gridScreen;
@@ -85,7 +81,7 @@ function initOperatorApp(): void {
     }
 
     const activeRoute = currentRoute();
-    const links = navLinks(hasReservation(), isHostMode());
+    const links = navLinks(hasReservation());
 
     const seen = new Set<string>();
     for (const { href, label, disabled } of links) {

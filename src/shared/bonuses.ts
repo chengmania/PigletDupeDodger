@@ -1,3 +1,5 @@
+import type { BonusClaim, ClubConfig, Qso } from './types.ts';
+
 export type BonusScaling = 'flat' | 'per-transmitter' | 'per-message';
 
 export interface BonusDef {
@@ -46,4 +48,26 @@ export function isClassEligible(def: Pick<BonusDef, 'classes'>, entryClass: stri
 
 export function getBonusDef(id: string): BonusDef | undefined {
   return BONUS_CATALOG.find((b) => b.id === id);
+}
+
+export interface BonusRow {
+  def: BonusDef;
+  claim: BonusClaim | undefined;
+  coachedCount: number;
+}
+
+// Class-eligible bonus rows for the checklist UI, reused by both the
+// admin-editable view (captain-bonus.ts) and the operator read-only view
+// (dashboard.ts).
+export function bonusChecklistRows(
+  config: Pick<ClubConfig, 'entryClass'>,
+  bonuses: ReadonlyMap<string, BonusClaim>,
+  qsos: readonly Qso[],
+): BonusRow[] {
+  const coachedCount = qsos.filter((q) => !q.deleted && q.station === 'GOTA' && q.gotaCoached).length;
+  return BONUS_CATALOG.filter((def) => isClassEligible(def, config.entryClass)).map((def) => ({
+    def,
+    claim: bonuses.get(def.id),
+    coachedCount,
+  }));
 }

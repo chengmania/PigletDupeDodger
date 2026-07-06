@@ -3,27 +3,27 @@ import { navLinks } from '../src/client/nav.ts';
 
 describe('navLinks', () => {
   test('disables the Log link when the operator holds no reservation', () => {
-    const links = navLinks(false, false);
+    const links = navLinks(false);
     const log = links.find((l) => l.href === '#/log');
     expect(log?.disabled).toBe(true);
   });
 
   test('enables the Log link once a reservation is held', () => {
-    const links = navLinks(true, false);
+    const links = navLinks(true);
     const log = links.find((l) => l.href === '#/log');
     expect(log?.disabled).toBe(false);
   });
 
   test('Grid and Dashboard are never disabled', () => {
     for (const hasReservation of [true, false]) {
-      const links = navLinks(hasReservation, false);
+      const links = navLinks(hasReservation);
       expect(links.find((l) => l.href === '#/grid')?.disabled).toBe(false);
       expect(links.find((l) => l.href === '#/dashboard')?.disabled).toBe(false);
     }
   });
 
-  test('Host Setup link only appears when showHostSetup is true', () => {
-    expect(navLinks(false, false).some((l) => l.href === '#/setup')).toBe(false);
-    expect(navLinks(false, true).some((l) => l.href === '#/setup')).toBe(true);
+  test('never includes a Host Setup link', () => {
+    expect(navLinks(false).some((l) => l.href === '#/setup')).toBe(false);
+    expect(navLinks(true).some((l) => l.href === '#/setup')).toBe(false);
   });
 });

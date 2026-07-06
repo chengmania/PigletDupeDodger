@@ -73,10 +73,11 @@ describe('serveAdminApi', () => {
     const bad = await serveAdminApi(postJson('/api/admin/login', { captainCall: 'W1CAP', password: 'wrong' }), ctx);
     expect(bad!.status).toBe(401);
 
-    // status reflects loggedIn:true when the request carries the issued cookie
+    // status reflects loggedIn:true when the request carries the issued cookie,
+    // and includes captainCall so the client can hello over WS as the captain.
     const statusReq = new Request('http://localhost/api/admin/status', { headers: { cookie: cookie.split(';')[0]! } });
     const statusRes = await serveAdminApi(statusReq, ctx);
-    expect(await statusRes!.json()).toEqual({ configured: true, loggedIn: true });
+    expect(await statusRes!.json()).toEqual({ configured: true, loggedIn: true, captainCall: 'W1CAP' });
   });
 
   test('login 409s before setup has ever run', async () => {

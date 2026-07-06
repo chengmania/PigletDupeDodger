@@ -1,8 +1,8 @@
 import { BANDS } from '../../shared/bands.ts';
 import { scoreLog } from '../../shared/scoring.ts';
 import type { Mode } from '../../shared/types.ts';
-import { isHostMode } from '../host-mode.ts';
 import { store } from '../store.ts';
+import { statTile } from '../ui/stat-tile.ts';
 
 const MODES: Mode[] = ['PH', 'CW', 'DIG'];
 
@@ -21,14 +21,8 @@ export function render(container: HTMLElement, _isNewMount: boolean): void {
 
   if (!config) {
     const msg = document.createElement('p');
-    msg.textContent = 'Event not configured yet.';
+    msg.textContent = 'Event not configured yet -- ask your Captain to set up the club config.';
     root.appendChild(msg);
-    if (isHostMode()) {
-      const link = document.createElement('a');
-      link.href = '#/setup';
-      link.textContent = 'Go to host setup.';
-      root.appendChild(link);
-    }
     container.appendChild(root);
     return;
   }
@@ -111,17 +105,4 @@ export function render(container: HTMLElement, _isNewMount: boolean): void {
   root.appendChild(opList);
 
   container.appendChild(root);
-}
-
-function statTile(label: string, value: string): HTMLElement {
-  const tile = document.createElement('div');
-  tile.className = 'stat-tile';
-  const v = document.createElement('div');
-  v.className = 'stat-value';
-  v.textContent = value;
-  const l = document.createElement('div');
-  l.className = 'stat-label';
-  l.textContent = label;
-  tile.append(v, l);
-  return tile;
 }

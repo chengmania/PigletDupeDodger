@@ -568,7 +568,7 @@ input.invalid {
   text-align: center;
 }
 
-/* ---- Host setup / bonus checklist ---- */
+/* ---- Captain club setup / bonus checklist form ---- */
 
 .host-setup-form {
   display: flex;
@@ -820,4 +820,81 @@ input.invalid {
   border-radius: var(--radius-lg);
   padding: 1rem;
   margin: 1rem 0;
+}
+
+/* ---- Captain's Station dashboard ---- */
+
+.captain-dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.captain-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.captain-logout {
+  min-height: var(--touch-min);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+}
+
+.captain-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.captain-tabs button {
+  min-height: var(--touch-min);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.captain-tabs button.active {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: transparent;
+}
+
+.captain-save-notice {
+  color: var(--success);
+  font-weight: 600;
+  align-self: center;
+}
+
+.captain-firehose-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.captain-firehose-filters select {
+  min-height: var(--touch-min);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  padding: 0.3rem 0.5rem;
+}
+
+.qso-row-deleted {
+  opacity: 0.55;
+  text-decoration: line-through;
 }

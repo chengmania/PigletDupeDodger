@@ -22,7 +22,7 @@ export async function serveAdminApi(req: Request, ctx: ServerContext): Promise<R
 
   if (url.pathname === '/api/admin/status' && req.method === 'GET') {
     const loggedIn = ctx.admin !== null && checkAdminCookie(req, ctx.admin.sessionSecret);
-    return json({ configured: ctx.admin !== null, loggedIn });
+    return json({ configured: ctx.admin !== null, loggedIn, captainCall: loggedIn ? ctx.admin!.captainCall : undefined });
   }
 
   if (url.pathname === '/api/admin/setup' && req.method === 'POST') {
