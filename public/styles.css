@@ -11,6 +11,8 @@
   --taken-fg: #fff6dc;
   --yours: #1565c0;
   --yours-fg: #eaf3ff;
+  --dupe: #c62828;
+  --dupe-fg: #ffeaea;
   color-scheme: dark;
 }
 
@@ -28,6 +30,8 @@
     --taken-fg: #241a00;
     --yours: #1565c0;
     --yours-fg: #ffffff;
+    --dupe: #c62828;
+    --dupe-fg: #ffffff;
     color-scheme: light;
   }
 }
@@ -41,12 +45,6 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
-}
-
-#app {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 1.5rem;
 }
 
 h1 {
@@ -135,4 +133,110 @@ h1 {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+.app-nav {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-nav a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.app-nav a.active {
+  color: var(--accent);
+}
+
+.app-content {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.log-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 360px;
+}
+
+.log-form input,
+.log-form button,
+.log-context-select select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.log-form button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.sat-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.dupe-status {
+  min-height: 1.5rem;
+  font-weight: 600;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+}
+
+.dupe-new {
+  background: var(--open);
+  color: var(--open-fg);
+}
+
+.dupe-dupe {
+  background: var(--taken);
+  color: var(--taken-fg);
+}
+
+.dupe-blocked {
+  background: var(--dupe);
+  color: var(--dupe-fg);
+}
+
+.ticker,
+.your-recent {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ticker li,
+.your-recent li {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ticker-pending {
+  opacity: 0.6;
+  font-style: italic;
 }
