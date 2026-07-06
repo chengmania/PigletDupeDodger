@@ -375,3 +375,42 @@ h1 {
   padding: 0.5rem;
   font-weight: 600;
 }
+
+.connect-qr {
+  width: 160px;
+  height: 160px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.leaderboard-screen {
+  text-align: center;
+}
+
+.leaderboard-total {
+  font-size: 6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.leaderboard-total-label {
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 1.5rem;
+}
+
+.leaderboard-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.leaderboard-ticker {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
+}

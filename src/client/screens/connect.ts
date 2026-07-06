@@ -27,6 +27,12 @@ export function render(container: HTMLElement): void {
   onlineCount.textContent = `${state.data.operators.size} operator(s) known`;
   wrapper.appendChild(onlineCount);
 
+  const qr = document.createElement('img');
+  qr.src = '/qr.svg';
+  qr.alt = 'Scan to open this page on another device';
+  qr.className = 'connect-qr';
+  wrapper.appendChild(qr);
+
   const form = document.createElement('form');
   form.className = 'connect-form';
 

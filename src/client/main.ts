@@ -3,6 +3,7 @@ import * as dashboardScreen from './screens/dashboard.ts';
 import * as exportsScreen from './screens/exports.ts';
 import * as gridScreen from './screens/grid.ts';
 import * as hostSetupScreen from './screens/host-setup.ts';
+import * as leaderboardScreen from './screens/leaderboard.ts';
 import * as logScreen from './screens/log.ts';
 import { mountBanner, updateBanner } from './banner.ts';
 import { isHostMode } from './host-mode.ts';
@@ -17,16 +18,20 @@ function navLinks(): Array<[string, string]> {
     ['#/log', 'Log'],
     ['#/dashboard', 'Dashboard'],
     ['#/exports', 'Exports'],
+    ['#/leaderboard', 'Leaderboard'],
   ];
   if (isHostMode()) links.push(['#/setup', 'Host Setup']);
   return links;
 }
 
 function currentScreen(): Screen {
+  const route = location.hash.replace(/^#/, '') || '/grid';
+  // Public, no sign-in required -- this is the big-screen kiosk view.
+  if (route === '/leaderboard') return leaderboardScreen;
+
   const state = store.get();
   if (!state.you) return connectScreen;
 
-  const route = location.hash.replace(/^#/, '') || '/grid';
   switch (route) {
     case '/log':
       return logScreen;

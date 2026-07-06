@@ -1,8 +1,9 @@
 import { networkInterfaces } from 'node:os';
 import { broadcast } from './broadcast.ts';
 import type { CommandDeps, ServerContext } from './commands.ts';
-import { serveJournalBackup, serveStatic } from './http.ts';
+import { serveJournalBackup, serveLeaderboard, serveQr, serveStatic } from './http.ts';
 import { boot, writeSnapshot, writeSnapshotIfDue } from './journal-io.ts';
+import { generateQrMatrix, qrToAsciiArt, qrToSvg } from './qr.ts';
 import { makeWebSocketHandlers, upgradeIfWebSocket } from './ws.ts';
 
 function parseArgs(argv: string[]): { port: number; dataDir: string } {
@@ -33,17 +34,29 @@ async function main() {
 
   const wsHandlers = makeWebSocketHandlers(deps);
 
+  const lanIps = localLanIps();
+  const primaryUrl = `http://${lanIps[0] ?? 'localhost'}:${port}`;
+  const qrSvg = qrToSvg(generateQrMatrix(primaryUrl));
+
   const server = Bun.serve({
     port,
     fetch(req, srv) {
-      return upgradeIfWebSocket(req, srv) ?? serveJournalBackup(req, dataDir) ?? serveStatic(req);
+      return (
+        upgradeIfWebSocket(req, srv) ??
+        serveJournalBackup(req, dataDir) ??
+        serveLeaderboard(req, ctx) ??
+        serveQr(req, qrSvg) ??
+        serveStatic(req)
+      );
     },
     websocket: wsHandlers,
   });
 
   console.log(`PigletDupeDodger listening on port ${port}`);
-  for (const ip of localLanIps()) console.log(`  http://${ip}:${port}`);
+  for (const ip of lanIps) console.log(`  http://${ip}:${port}`);
   console.log(`  http://localhost:${port}`);
+  console.log('\nScan to connect:\n');
+  console.log(qrToAsciiArt(generateQrMatrix(primaryUrl)));
 
   let lastSnapshotAt = Date.now();
   const snapshotInterval = setInterval(async () => {
