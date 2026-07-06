@@ -127,7 +127,7 @@ function renderNewRecoveryCode(container: HTMLElement, recoveryCode: string, onD
   root.appendChild(title);
 
   const warning = document.createElement('p');
-  warning.textContent = 'Your old recovery code no longer works. Write this new one on the flash drive label.';
+  warning.textContent = 'Your old recovery code no longer works. Write this new one down somewhere safe.';
   root.appendChild(warning);
 
   const codeDisplay = document.createElement('div');

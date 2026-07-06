@@ -4,7 +4,6 @@ import { generateId } from '../../shared/id.ts';
 import type { Mode, Qso, Reservation, StationKind } from '../../shared/types.ts';
 import { isValidClass } from '../../shared/validate.ts';
 import { isValidSectionCode } from '../../shared/sections.ts';
-import { fillDatalist, workedCallOptions } from '../autocomplete.ts';
 import { describeDupe } from '../dupe-live.ts';
 import { buildIdentity } from '../log-model.ts';
 import { sortNewestFirst, toQsoRow } from '../qso-list-model.ts';
@@ -32,15 +31,12 @@ interface Els {
   satFmCheckbox: HTMLInputElement;
   dupeStatus: HTMLElement;
   logBtn: HTMLButtonElement;
-  ticker: HTMLElement;
   yourRecent: HTMLElement;
   sessionCount: HTMLElement;
-  callsDatalist: HTMLDataListElement;
   sectionMap: SectionMapHandle;
 }
 
 let els: Els | null = null;
-const pending = new Map<string, Qso>();
 let unsubscribeOutcomes: (() => void) | null = null;
 let lastReservationKeys = '';
 let editingId: string | null = null;
@@ -63,7 +59,6 @@ export function render(container: HTMLElement, isNewMount: boolean): void {
 
 function buildForm(container: HTMLElement): void {
   container.innerHTML = '';
-  pending.clear();
   editingId = null;
   unsubscribeOutcomes?.();
 
@@ -94,15 +89,11 @@ function buildForm(container: HTMLElement): void {
   entryRow.className = 'log-entry-row';
 
   const callInput = document.createElement('input');
-  callInput.placeholder = 'Callsign worked';
+  callInput.placeholder = 'Call Sign';
   callInput.autofocus = true;
-  callInput.setAttribute('list', 'worked-calls');
+  callInput.autocomplete = 'off';
   callInput.className = 'log-call-input';
   entryRow.appendChild(callInput);
-
-  const callsDatalist = document.createElement('datalist');
-  callsDatalist.id = 'worked-calls';
-  form.appendChild(callsDatalist);
 
   const classInput = document.createElement('input');
   classInput.placeholder = 'Class (e.g. 3A)';
@@ -136,13 +127,11 @@ function buildForm(container: HTMLElement): void {
   dupeStatus.className = 'dupe-status';
   form.appendChild(dupeStatus);
 
-  const logLayout = document.createElement('div');
-  logLayout.className = 'log-layout';
-  logLayout.appendChild(form);
+  root.appendChild(form);
+
   const mapContainer = document.createElement('div');
-  mapContainer.className = 'log-layout-map';
-  logLayout.appendChild(mapContainer);
-  root.appendChild(logLayout);
+  mapContainer.className = 'log-map-container';
+  root.appendChild(mapContainer);
   const sectionMap = mountSectionMap(mapContainer);
 
   const sessionCount = document.createElement('p');
@@ -162,13 +151,6 @@ function buildForm(container: HTMLElement): void {
   yourRecentTable.appendChild(yourRecent);
   root.appendChild(yourRecentTable);
 
-  const tickerTitle = document.createElement('h2');
-  tickerTitle.textContent = 'Club-wide activity';
-  root.appendChild(tickerTitle);
-  const ticker = document.createElement('ul');
-  ticker.className = 'ticker';
-  root.appendChild(ticker);
-
   container.appendChild(root);
 
   els = {
@@ -184,10 +166,8 @@ function buildForm(container: HTMLElement): void {
     satFmCheckbox,
     dupeStatus,
     logBtn,
-    ticker,
     yourRecent,
     sessionCount,
-    callsDatalist,
     sectionMap,
   };
 
@@ -221,13 +201,11 @@ function buildForm(container: HTMLElement): void {
     }
   });
 
-  unsubscribeOutcomes = onQsoAddOutcome(({ clientId, ok, ...rest }) => {
-    pending.delete(clientId);
+  unsubscribeOutcomes = onQsoAddOutcome(({ ok, ...rest }) => {
     if (!ok && els) {
       els.dupeStatus.textContent = `Rejected by server: ${(rest as { reason: string }).reason}`;
       els.dupeStatus.className = 'dupe-status dupe-blocked';
     }
-    renderTicker();
   });
 }
 
@@ -370,22 +348,6 @@ function submitQso(): void {
   const offline = state.connection !== 'connected';
   const clientTs = new Date().toISOString();
 
-  const optimistic: Qso = {
-    id: `pending:${clientId}`,
-    ts: clientTs,
-    station: ctx.station,
-    band: ctx.band,
-    mode: ctx.mode,
-    call,
-    exchClass,
-    exchSection,
-    operatorCall: state.you.call,
-    satelliteName,
-    satelliteSingleChannelFm,
-    queued: offline,
-  };
-  pending.set(clientId, optimistic);
-
   send({
     type: 'qso:add',
     clientId,
@@ -403,14 +365,11 @@ function submitQso(): void {
   els.satFmCheckbox.checked = false;
   els.callInput.focus();
   runDupeCheck();
-  renderTicker();
 }
 
 function updateDynamic(): void {
   if (!els) return;
   const state = store.get();
-
-  fillDatalist(els.callsDatalist, workedCallOptions(state.data.qsos.values()));
 
   const keys = myReservations().map(contextKey).sort().join(',');
   if (keys !== lastReservationKeys) {
@@ -425,7 +384,6 @@ function updateDynamic(): void {
   els.sessionCount.textContent = `Your QSO count: ${yourCount}`;
 
   renderYourRecent();
-  renderTicker();
   els.sectionMap.update();
 }
 
@@ -554,21 +512,4 @@ function buildEditRow(q: Qso): HTMLTableRowElement {
   tr.appendChild(cancelTd);
 
   return tr;
-}
-
-function renderTicker(): void {
-  if (!els) return;
-  const state = store.get();
-  const confirmed = [...state.data.qsos.values()].filter((q) => !q.deleted);
-  const combined = [...confirmed, ...pending.values()].sort((a, b) => b.ts.localeCompare(a.ts)).slice(0, 10);
-
-  els.ticker.innerHTML = '';
-  for (const q of combined) {
-    const li = document.createElement('li');
-    const isPending = q.id.startsWith('pending:');
-    const suffix = isPending ? (q.queued ? ' (queued -- offline)' : ' (sending...)') : '';
-    li.textContent = `${q.call} -- ${q.band}/${q.mode} (${q.station}) by ${q.operatorCall}${suffix}`;
-    if (isPending) li.className = 'ticker-pending';
-    els.ticker.appendChild(li);
-  }
 }

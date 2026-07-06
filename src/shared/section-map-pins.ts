@@ -109,7 +109,9 @@ export const SECTION_PINS: SectionPin[] = [
   { section: 'SDG', x: 1035.0, y: 1410.0 },
 
   // --- Pacific section: Hawaii + Pacific islands, not a CA subdivision ---
-  { section: 'PAC', x: 52.8, y: 1286.4 },
+  // Coordinates account for the boxed Hawaii inset's translate(518.9,64.9)
+  // in section-map.svg (original untranslated pin was 52.8,1286.4).
+  { section: 'PAC', x: 571.7, y: 1351.3 },
 
   // --- Washington split: EWA / WWA ---
   { section: 'WWA', x: 1050.0, y: 1010.0 },

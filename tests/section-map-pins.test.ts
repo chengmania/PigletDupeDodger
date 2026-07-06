@@ -2,7 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import { BADGE_SECTIONS, SECTION_PATH_ID, SECTION_PINS } from '../src/shared/section-map-pins.ts';
 import { SECTION_CODES } from '../src/shared/sections.ts';
 
-const VIEWBOX_WIDTH = 2289;
+// Matches section-map.svg's viewBox="500 0 1789 1744" -- cropped on the left
+// to remove the empty ocean gap Hawaii's true geographic position left, now
+// that Hawaii is drawn as a repositioned, boxed inset instead.
+const VIEWBOX_X_MIN = 500;
+const VIEWBOX_X_MAX = 2289;
 const VIEWBOX_HEIGHT = 1744;
 
 describe('SECTION_PINS + BADGE_SECTIONS', () => {
@@ -34,8 +38,8 @@ describe('SECTION_PINS + BADGE_SECTIONS', () => {
 
   test('every pin coordinate falls within the map viewBox', () => {
     for (const p of SECTION_PINS) {
-      expect(p.x).toBeGreaterThanOrEqual(0);
-      expect(p.x).toBeLessThanOrEqual(VIEWBOX_WIDTH);
+      expect(p.x).toBeGreaterThanOrEqual(VIEWBOX_X_MIN);
+      expect(p.x).toBeLessThanOrEqual(VIEWBOX_X_MAX);
       expect(p.y).toBeGreaterThanOrEqual(0);
       expect(p.y).toBeLessThanOrEqual(VIEWBOX_HEIGHT);
     }

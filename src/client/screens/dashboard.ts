@@ -1,15 +1,41 @@
 import { BANDS } from '../../shared/bands.ts';
-import { bonusChecklistRows } from '../../shared/bonuses.ts';
 import { scoreLog } from '../../shared/scoring.ts';
-import type { BonusClaim, ClubConfig, Mode, Qso } from '../../shared/types.ts';
+import type { Mode } from '../../shared/types.ts';
 import { sortNewestFirst, toQsoRow } from '../qso-list-model.ts';
+import { mountSectionMap, type SectionMapHandle } from '../section-map.ts';
 import { store } from '../store.ts';
 import { statTile } from '../ui/stat-tile.ts';
 
 const MODES: Mode[] = ['PH', 'CW', 'DIG'];
 
-export function render(container: HTMLElement, _isNewMount: boolean): void {
+interface Els {
+  totals: HTMLElement;
+  warning: HTMLElement;
+  matrixBody: HTMLElement;
+  opList: HTMLElement;
+  feedBody: HTMLElement;
+  sectionMap: SectionMapHandle;
+}
+
+let els: Els | null = null;
+// Tracks whether the currently-built shell assumed a config was present --
+// lets a live config:set mid-session (no route change, so isNewMount stays
+// false) still trigger the one-time shell rebuild it needs.
+let builtForConfig = false;
+
+export function render(container: HTMLElement, isNewMount: boolean): void {
+  const hasConfig = !!store.get().data.config;
+
+  if (isNewMount || !els || builtForConfig !== hasConfig) {
+    build(container, hasConfig);
+  }
+  if (hasConfig) updateDynamic();
+}
+
+function build(container: HTMLElement, hasConfig: boolean): void {
   container.innerHTML = '';
+  els = null;
+  builtForConfig = hasConfig;
 
   const root = document.createElement('div');
   root.className = 'screen dashboard-screen';
@@ -18,10 +44,7 @@ export function render(container: HTMLElement, _isNewMount: boolean): void {
   title.textContent = 'Dashboard';
   root.appendChild(title);
 
-  const state = store.get();
-  const config = state.data.config;
-
-  if (!config) {
+  if (!hasConfig) {
     const msg = document.createElement('p');
     msg.textContent = 'Event not configured yet -- ask your Captain to set up the club config.';
     root.appendChild(msg);
@@ -29,29 +52,13 @@ export function render(container: HTMLElement, _isNewMount: boolean): void {
     return;
   }
 
-  const qsos = [...state.data.qsos.values()];
-  const operators = [...state.data.operators.values()];
-  const score = scoreLog(qsos, config, state.data.bonuses, operators);
-
   const totals = document.createElement('div');
   totals.className = 'dashboard-totals';
-  totals.append(
-    statTile('QSO Points', String(score.qsoPoints)),
-    statTile('Multiplier', `x${score.multiplier}`),
-    statTile('Multiplied Points', String(score.multipliedPoints)),
-    statTile('Bonus Points', String(score.bonusPoints)),
-    statTile('GOTA Bonus', String(score.gotaBonus)),
-    statTile('Youth Bonus', String(score.youthBonus)),
-    statTile('Total', String(score.total)),
-  );
   root.appendChild(totals);
 
-  if (score.ineligibleClaims.length > 0) {
-    const warn = document.createElement('p');
-    warn.className = 'dashboard-warning';
-    warn.textContent = `Claimed but not counted (class-ineligible or requirements unmet): ${score.ineligibleClaims.join(', ')}`;
-    root.appendChild(warn);
-  }
+  const warning = document.createElement('p');
+  warning.className = 'dashboard-warning hidden';
+  root.appendChild(warning);
 
   const matrixTitle = document.createElement('h2');
   matrixTitle.textContent = 'Band / Mode Matrix';
@@ -72,8 +79,70 @@ export function render(container: HTMLElement, _isNewMount: boolean): void {
   headRow.appendChild(totalTh);
   thead.appendChild(headRow);
   table.appendChild(thead);
+  const matrixBody = document.createElement('tbody');
+  table.appendChild(matrixBody);
+  root.appendChild(table);
 
-  const tbody = document.createElement('tbody');
+  const opTitle = document.createElement('h2');
+  opTitle.textContent = 'Per-Operator';
+  root.appendChild(opTitle);
+  const opList = document.createElement('ul');
+  root.appendChild(opList);
+
+  const feedTitle = document.createElement('h2');
+  feedTitle.textContent = 'Live QSO Feed';
+  root.appendChild(feedTitle);
+  const feedTable = document.createElement('table');
+  feedTable.className = 'qso-table';
+  const feedThead = document.createElement('thead');
+  feedThead.innerHTML =
+    '<tr><th>Call</th><th>UTC Time/Date</th><th>Band</th><th>Mode</th><th>Class</th><th>Section</th><th>Operator</th></tr>';
+  feedTable.appendChild(feedThead);
+  const feedBody = document.createElement('tbody');
+  feedTable.appendChild(feedBody);
+  root.appendChild(feedTable);
+
+  const mapTitle = document.createElement('h2');
+  mapTitle.textContent = 'Section Map';
+  root.appendChild(mapTitle);
+  const mapContainer = document.createElement('div');
+  root.appendChild(mapContainer);
+  const sectionMap = mountSectionMap(mapContainer, { alwaysExpanded: true });
+
+  container.appendChild(root);
+
+  els = { totals, warning, matrixBody, opList, feedBody, sectionMap };
+}
+
+function updateDynamic(): void {
+  if (!els) return;
+  const state = store.get();
+  const config = state.data.config;
+  if (!config) return;
+
+  const qsos = [...state.data.qsos.values()];
+  const operators = [...state.data.operators.values()];
+  const score = scoreLog(qsos, config, state.data.bonuses, operators);
+
+  els.totals.innerHTML = '';
+  els.totals.append(
+    statTile('QSO Points', String(score.qsoPoints)),
+    statTile('Multiplier', `x${score.multiplier}`),
+    statTile('Multiplied Points', String(score.multipliedPoints)),
+    statTile('Bonus Points', String(score.bonusPoints)),
+    statTile('GOTA Bonus', String(score.gotaBonus)),
+    statTile('Youth Bonus', String(score.youthBonus)),
+    statTile('Total', String(score.total)),
+  );
+
+  if (score.ineligibleClaims.length > 0) {
+    els.warning.textContent = `Claimed but not counted (class-ineligible or requirements unmet): ${score.ineligibleClaims.join(', ')}`;
+    els.warning.classList.remove('hidden');
+  } else {
+    els.warning.classList.add('hidden');
+  }
+
+  els.matrixBody.innerHTML = '';
   for (const band of BANDS) {
     const row = document.createElement('tr');
     const label = document.createElement('th');
@@ -90,44 +159,20 @@ export function render(container: HTMLElement, _isNewMount: boolean): void {
     const totalTd = document.createElement('td');
     totalTd.textContent = String(rowTotal);
     row.appendChild(totalTd);
-    tbody.appendChild(row);
+    els.matrixBody.appendChild(row);
   }
-  table.appendChild(tbody);
-  root.appendChild(table);
 
-  const opTitle = document.createElement('h2');
-  opTitle.textContent = 'Per-Operator';
-  root.appendChild(opTitle);
-  const opList = document.createElement('ul');
+  els.opList.innerHTML = '';
   for (const [call, stats] of Object.entries(score.perOperator).sort((a, b) => b[1].count - a[1].count)) {
     const li = document.createElement('li');
     li.textContent = `${call}: ${stats.count} QSOs, ${stats.qsoPoints} pts`;
-    opList.appendChild(li);
+    els.opList.appendChild(li);
   }
-  root.appendChild(opList);
 
-  root.appendChild(buildLiveFeed(qsos));
-  root.appendChild(buildReadOnlyBonusChecklist(config, state.data.bonuses, qsos));
-
-  container.appendChild(root);
-}
-
-// All-operators live QSO feed (CO-7) -- deleted rows are filtered out here,
-// unlike the admin firehose (Milestone 8) which intentionally shows them.
-function buildLiveFeed(qsos: readonly Qso[]): HTMLElement {
-  const section = document.createElement('div');
-  const title = document.createElement('h2');
-  title.textContent = 'Live QSO Feed';
-  section.appendChild(title);
-
+  // All-operators live QSO feed (CO-7) -- deleted rows are filtered out
+  // here, unlike the admin firehose which intentionally shows them.
+  els.feedBody.innerHTML = '';
   const rows = sortNewestFirst(qsos.filter((q) => !q.deleted)).map((q) => toQsoRow(q, null));
-
-  const table = document.createElement('table');
-  table.className = 'qso-table';
-  const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Call</th><th>UTC Time/Date</th><th>Band</th><th>Mode</th><th>Class</th><th>Section</th><th>Operator</th></tr>';
-  table.appendChild(thead);
-  const tbody = document.createElement('tbody');
   for (const row of rows) {
     const tr = document.createElement('tr');
     const callCell = document.createElement('td');
@@ -144,60 +189,8 @@ function buildLiveFeed(qsos: readonly Qso[]): HTMLElement {
       td.textContent = value;
       tr.appendChild(td);
     }
-    tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-  section.appendChild(table);
-  return section;
-}
-
-// Read-only mirror of the Captain's bonus checklist -- all inputs disabled,
-// no send() calls, since claiming/adjusting bonuses is admin-only (CO-5).
-function buildReadOnlyBonusChecklist(
-  config: Pick<ClubConfig, 'entryClass'>,
-  bonuses: ReadonlyMap<string, BonusClaim>,
-  qsos: readonly Qso[],
-): HTMLElement {
-  const section = document.createElement('div');
-  const title = document.createElement('h2');
-  title.textContent = 'Bonus Checklist';
-  section.appendChild(title);
-
-  const body = document.createElement('div');
-  body.className = 'bonus-checklist';
-  section.appendChild(body);
-
-  const rows = bonusChecklistRows(config, bonuses, qsos);
-  for (const { def, claim, coachedCount } of rows) {
-    const row = document.createElement('div');
-    row.className = 'bonus-row';
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = !!claim?.claimed;
-    checkbox.disabled = true;
-
-    const label = document.createElement('label');
-    label.append(checkbox, ` ${def.name} (${def.points} pt${def.points === 1 ? '' : 's'}, ${def.ruleRef})`);
-    row.appendChild(label);
-
-    if (def.scaling === 'per-transmitter' || def.scaling === 'per-message') {
-      const countInput = document.createElement('input');
-      countInput.type = 'number';
-      countInput.disabled = true;
-      countInput.value = String((def.scaling === 'per-transmitter' ? claim?.transmitterCount : claim?.messageCount) ?? 0);
-      row.appendChild(countInput);
-    }
-
-    if (def.requiresGotaCoachCount !== undefined) {
-      const note = document.createElement('span');
-      note.className = 'bonus-note';
-      note.textContent = ` requires >=${def.requiresGotaCoachCount} coached contacts (currently ${coachedCount})`;
-      row.appendChild(note);
-    }
-
-    body.appendChild(row);
+    els.feedBody.appendChild(tr);
   }
 
-  return section;
+  els.sectionMap.update();
 }

@@ -11,7 +11,7 @@ export function renderCaptainSetup(container: HTMLElement, onComplete: () => voi
   root.appendChild(title);
 
   const intro = document.createElement('p');
-  intro.textContent = 'No admin has been configured yet on this flash drive. Set one up now.';
+  intro.textContent = 'No admin has been configured yet on this host. Set one up now.';
   root.appendChild(intro);
 
   const form = document.createElement('form');
@@ -92,7 +92,7 @@ function renderRecoveryCodeReveal(container: HTMLElement, recoveryCode: string, 
   root.appendChild(title);
 
   const warning = document.createElement('p');
-  warning.textContent = 'This code is shown only once. Write it on the flash drive label -- it is the only way to reset your password if you forget it.';
+  warning.textContent = 'This code is shown only once. Write it down somewhere safe -- it is the only way to reset your password if you forget it.';
   root.appendChild(warning);
 
   const codeDisplay = document.createElement('div');

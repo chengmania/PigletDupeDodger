@@ -2,7 +2,7 @@ import type { AdminRecord } from './admin-store.ts';
 import { writeAdmin } from './admin-store.ts';
 
 // Uppercase alphanumeric, excluding ambiguous 0/O/1/I -- easier to transcribe
-// onto a flash drive label by hand.
+// by hand onto a sticky note or written record.
 const RECOVERY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export function generateRecoveryCode(): string {

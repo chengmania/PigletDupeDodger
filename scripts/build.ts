@@ -11,8 +11,10 @@ const TARGETS = [
 const START_HERE = `PigletDupeDodger -- quick start
 ================================
 
-1. Plug this flash drive into the computer that will run the host at your
-   Field Day site (needs no internet connection).
+1. Copy this folder onto the computer that will run the host at your Field
+   Day site (a laptop, desktop, or something like a Raspberry Pi -- needs no
+   internet connection, just a shared WiFi network with the operator
+   stations).
 2. Run the binary for that computer's OS:
      Windows -> PigletDupeDodger-win.exe (double-click)
      Mac (Apple Silicon) -> PigletDupeDodger-mac-arm
@@ -28,12 +30,12 @@ const START_HERE = `PigletDupeDodger -- quick start
 5. Before the event: one person should visit <that URL>/captain (typed into
    the address bar -- it's not linked from any operator screen) to set up
    the Captain's Station login, club config, and bonus checklist. First
-   visit shows a one-time recovery code -- write it on this flash drive
-   label, it's the only way back in if the Captain password is forgotten.
+   visit shows a one-time recovery code -- write it down somewhere safe,
+   it's the only way back in if the Captain password is forgotten.
 6. All QSOs are saved as they're logged into the fdlog-data/ folder next to
-   the binary, on this flash drive. Don't delete that folder during the
-   event -- it's your only copy until you export at the end (Captain's
-   Station has the exports and the full journal backup download).
+   the binary. Don't delete that folder during the event -- it's your only
+   copy until you export at the end (Captain's Station has the exports and
+   the full journal backup download).
 
 73, and may your dupes always be dodged!
 `;
@@ -50,22 +52,22 @@ async function main() {
     await $`bun build --compile --target=${t.bunTarget} ./src/server/index.ts --outfile ${outfile}`;
   }
 
-  const flashdriveDir = 'dist/flashdrive';
-  await mkdir(`${flashdriveDir}/fdlog-data`, { recursive: true });
+  const bundleDir = 'dist/bundle';
+  await mkdir(`${bundleDir}/fdlog-data`, { recursive: true });
   for (const t of TARGETS) {
-    await cp(`dist/PigletDupeDodger-${t.suffix}`, `${flashdriveDir}/PigletDupeDodger-${t.suffix}`);
+    await cp(`dist/PigletDupeDodger-${t.suffix}`, `${bundleDir}/PigletDupeDodger-${t.suffix}`);
   }
-  await writeFile(`${flashdriveDir}/START-HERE.txt`, START_HERE);
-  await writeFile(`${flashdriveDir}/fdlog-data/.gitkeep`, '');
+  await writeFile(`${bundleDir}/START-HERE.txt`, START_HERE);
+  await writeFile(`${bundleDir}/fdlog-data/.gitkeep`, '');
 
   try {
-    await $`cd dist && zip -r flashdrive.zip flashdrive`.quiet();
-    console.log('Created dist/flashdrive.zip');
+    await $`cd dist && zip -r bundle.zip bundle`.quiet();
+    console.log('Created dist/bundle.zip');
   } catch {
-    console.log('("zip" command not found -- dist/flashdrive/ left as a plain folder)');
+    console.log('("zip" command not found -- dist/bundle/ left as a plain folder)');
   }
 
-  console.log('\nDone. See dist/flashdrive/');
+  console.log('\nDone. See dist/bundle/');
 }
 
 main();

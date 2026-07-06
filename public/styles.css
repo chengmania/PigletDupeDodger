@@ -104,6 +104,17 @@ button:disabled {
   filter: none;
 }
 
+/* Override the generic min-height:44px touch target for checkboxes
+   specifically -- stretching a checkbox to a 44px box throws off its
+   vertical alignment against adjacent label text. */
+input[type='checkbox'] {
+  min-height: auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  vertical-align: middle;
+}
+
 /* !important: this utility class must always win regardless of a more
    specific or later-defined display rule on the same element (e.g.
    .sat-fields sets display:flex). */
@@ -113,16 +124,24 @@ button:disabled {
 
 /* ---- App shell: header, banner, nav, content ---- */
 
+/* Grid, not flex-space-between: a spacer matching the toggle button's fixed
+   width keeps the title visually centered regardless of container width. */
 .app-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--touch-min) 1fr var(--touch-min);
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
 }
 
+.app-header-spacer {
+  width: var(--touch-min);
+}
+
 .app-header-title {
   font-weight: 700;
+  text-align: center;
 }
 
 .theme-toggle {
@@ -148,6 +167,7 @@ button:disabled {
 .app-nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem 1.25rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
@@ -172,8 +192,10 @@ button:disabled {
 
 .app-content {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 1rem auto;
   padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
 @media (min-width: 700px) {
@@ -441,29 +463,6 @@ input.invalid {
   color: var(--danger-fg);
 }
 
-.ticker {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.ticker li {
-  padding: 0.4rem 0.6rem;
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-}
-
 .qso-table {
   width: 100%;
   border-collapse: separate;
@@ -506,11 +505,6 @@ input.invalid {
 
 .qso-edit-row {
   background: var(--surface-raised);
-}
-
-.ticker-pending {
-  opacity: 0.6;
-  font-style: italic;
 }
 
 /* ---- Dashboard ---- */
@@ -640,28 +634,8 @@ input.invalid {
   padding: 0.6rem 1rem;
 }
 
-/* ---- Log layout: entry form + section map side-by-side on desktop ---- */
-
-.log-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  align-items: flex-start;
-}
-
-@media (min-width: 900px) {
-  .log-layout {
-    flex-direction: row;
-  }
-
-  .log-layout .log-form {
-    flex: 1 1 420px;
-  }
-
-  .log-layout-map {
-    flex: 1 1 380px;
-    min-width: 0;
-  }
+.log-map-container {
+  margin: 1.5rem 0;
 }
 
 .section-map {
@@ -687,8 +661,6 @@ input.invalid {
 
 .section-map-svg-holder {
   width: 100%;
-  max-height: 420px;
-  overflow: auto;
 }
 
 .section-map-svg-holder svg {
@@ -712,6 +684,12 @@ input.invalid {
 .section-pin-active {
   fill: var(--success);
   fill-opacity: 0.9;
+}
+
+.hi-inset-box {
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
 }
 
 .section-map-badges {
@@ -788,6 +766,12 @@ input.invalid {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.captain-topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .captain-logout {

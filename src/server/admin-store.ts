@@ -17,8 +17,8 @@ function adminPath(dataDir: string): string {
   return join(dataDir, 'admin.json');
 }
 
-// Lives on the same flash drive as journal.jsonl/state.json, so it persists
-// across restarts and travels with the event data, per spec.
+// Lives in the same fdlog-data/ folder as journal.jsonl/state.json, so it
+// persists across host restarts and travels with the event data.
 export async function readAdmin(dataDir: string): Promise<AdminRecord | null> {
   const path = adminPath(dataDir);
   if (!existsSync(path)) return null;

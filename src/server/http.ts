@@ -4,8 +4,8 @@ import { join } from 'node:path';
 // Static `with { type: 'file' }` imports so Bun's bundler embeds the actual
 // file contents into the compiled binary at build time -- a dynamically
 // joined path + Bun.file() at runtime only works in `bun run` dev mode,
-// since there's no real public/ directory sitting next to a compiled
-// executable on someone's flash drive.
+// since there's no real public/ directory sitting next to a standalone
+// compiled executable.
 // bun-types' ambient *.html typing (HTMLBundle) is for Bun's unrelated
 // HTML-bundling feature; with `type: 'file'` this import actually resolves
 // to a plain file path string at runtime.

@@ -1,3 +1,4 @@
+import { createThemeToggle } from '../header.ts';
 import { mountCaptainBonus } from './captain-bonus.ts';
 import { mountCaptainClubConfig } from './captain-clubconfig.ts';
 import { mountCaptainExports } from './captain-exports.ts';
@@ -38,6 +39,10 @@ export function mountCaptainDashboard(root: HTMLElement): void {
   title.textContent = "Captain's Station";
   topBar.appendChild(title);
 
+  const topBarControls = document.createElement('div');
+  topBarControls.className = 'captain-topbar-controls';
+  topBarControls.appendChild(createThemeToggle());
+
   const logoutBtn = document.createElement('button');
   logoutBtn.type = 'button';
   logoutBtn.className = 'captain-logout';
@@ -46,7 +51,8 @@ export function mountCaptainDashboard(root: HTMLElement): void {
     await postJson('/api/admin/logout', {});
     location.reload();
   });
-  topBar.appendChild(logoutBtn);
+  topBarControls.appendChild(logoutBtn);
+  topBar.appendChild(topBarControls);
   wrapper.appendChild(topBar);
 
   const tabs = document.createElement('nav');
