@@ -218,6 +218,7 @@ export async function handleQsoEdit(
   if (!conn.operatorCall) return reject(conn, 'NOT_SIGNED_IN');
   const existing = deps.ctx.state.qsos.get(msg.id);
   if (!existing) return reject(conn, 'NOT_FOUND');
+  if (existing.operatorCall !== conn.operatorCall) return reject(conn, 'NOT_YOUR_QSO');
 
   // If the edit touches any dupe-key field, re-run checkDupe against the
   // rest of the log (excluding this QSO) with the merged new values and
@@ -256,7 +257,9 @@ export async function handleQsoDelete(
   msg: Extract<ClientMessage, { type: 'qso:delete' }>,
 ): Promise<void> {
   if (!conn.operatorCall) return reject(conn, 'NOT_SIGNED_IN');
-  if (!deps.ctx.state.qsos.has(msg.id)) return reject(conn, 'NOT_FOUND');
+  const existing = deps.ctx.state.qsos.get(msg.id);
+  if (!existing) return reject(conn, 'NOT_FOUND');
+  if (existing.operatorCall !== conn.operatorCall) return reject(conn, 'NOT_YOUR_QSO');
   await append(deps, { type: 'qso:delete', ts: new Date().toISOString(), id: msg.id });
 }
 

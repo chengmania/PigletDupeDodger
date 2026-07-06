@@ -1,3 +1,4 @@
+import { BANDS } from '../../shared/bands.ts';
 import { checkDupe } from '../../shared/dupe.ts';
 import { generateId } from '../../shared/id.ts';
 import type { Mode, Qso, Reservation, StationKind } from '../../shared/types.ts';
@@ -6,6 +7,7 @@ import { isValidSectionCode } from '../../shared/sections.ts';
 import { fillDatalist, workedCallOptions } from '../autocomplete.ts';
 import { describeDupe } from '../dupe-live.ts';
 import { buildIdentity } from '../log-model.ts';
+import { sortNewestFirst, toQsoRow } from '../qso-list-model.ts';
 import { mountSectionSelect, type SectionSelectHandle } from '../section-select.ts';
 import { store } from '../store.ts';
 import { onQsoAddOutcome, send } from '../ws-client.ts';
@@ -39,6 +41,7 @@ let els: Els | null = null;
 const pending = new Map<string, Qso>();
 let unsubscribeOutcomes: (() => void) | null = null;
 let lastReservationKeys = '';
+let editingId: string | null = null;
 
 function contextKey(r: Pick<Reservation, 'station' | 'band' | 'mode'>): string {
   return `${r.station}|${r.band}|${r.mode}`;
@@ -59,6 +62,7 @@ export function render(container: HTMLElement, isNewMount: boolean): void {
 function buildForm(container: HTMLElement): void {
   container.innerHTML = '';
   pending.clear();
+  editingId = null;
   unsubscribeOutcomes?.();
 
   const root = document.createElement('div');
@@ -139,9 +143,15 @@ function buildForm(container: HTMLElement): void {
   const yourRecentTitle = document.createElement('h2');
   yourRecentTitle.textContent = 'Your recent QSOs';
   root.appendChild(yourRecentTitle);
-  const yourRecent = document.createElement('ul');
-  yourRecent.className = 'your-recent';
-  root.appendChild(yourRecent);
+  const yourRecentTable = document.createElement('table');
+  yourRecentTable.className = 'qso-table';
+  const yourRecentHead = document.createElement('thead');
+  yourRecentHead.innerHTML =
+    '<tr><th>Call</th><th>UTC Time/Date</th><th>Band</th><th>Class</th><th>Section</th><th></th><th></th></tr>';
+  yourRecentTable.appendChild(yourRecentHead);
+  const yourRecent = document.createElement('tbody');
+  yourRecentTable.appendChild(yourRecent);
+  root.appendChild(yourRecentTable);
 
   const tickerTitle = document.createElement('h2');
   tickerTitle.textContent = 'Club-wide activity';
@@ -415,20 +425,124 @@ function renderYourRecent(): void {
   els.yourRecent.innerHTML = '';
   if (!you) return;
 
-  const mine = [...state.data.qsos.values()]
-    .filter((q) => !q.deleted && q.operatorCall === you.call)
-    .sort((a, b) => b.ts.localeCompare(a.ts))
-    .slice(0, 5);
+  const mine = sortNewestFirst([...state.data.qsos.values()].filter((q) => !q.deleted && q.operatorCall === you.call)).slice(0, 5);
 
   for (const q of mine) {
-    const li = document.createElement('li');
-    li.textContent = `${q.call} -- ${q.band}/${q.mode} (${q.station}) `;
-    const delBtn = document.createElement('button');
-    delBtn.textContent = 'Delete';
-    delBtn.addEventListener('click', () => send({ type: 'qso:delete', id: q.id }));
-    li.appendChild(delBtn);
-    els.yourRecent.appendChild(li);
+    const row = toQsoRow(q, you.call);
+    els.yourRecent.appendChild(editingId === q.id ? buildEditRow(q) : buildDisplayRow(row));
   }
+}
+
+function buildDisplayRow(row: ReturnType<typeof toQsoRow>): HTMLTableRowElement {
+  const tr = document.createElement('tr');
+
+  const callCell = document.createElement('td');
+  callCell.textContent = row.call;
+  if (row.isDupe) {
+    const badge = document.createElement('span');
+    badge.className = 'badge badge-dupe';
+    badge.textContent = 'DUPE';
+    callCell.appendChild(badge);
+  }
+  tr.appendChild(callCell);
+
+  for (const value of [row.utc, row.band, row.exchClass, row.exchSection]) {
+    const td = document.createElement('td');
+    td.textContent = value;
+    tr.appendChild(td);
+  }
+
+  const editTd = document.createElement('td');
+  const editBtn = document.createElement('button');
+  editBtn.textContent = 'Edit';
+  editBtn.addEventListener('click', () => {
+    editingId = row.id;
+    renderYourRecent();
+  });
+  editTd.appendChild(editBtn);
+  tr.appendChild(editTd);
+
+  const delTd = document.createElement('td');
+  const delBtn = document.createElement('button');
+  delBtn.textContent = 'Delete';
+  delBtn.addEventListener('click', () => {
+    if (window.confirm(`Delete QSO with ${row.call}?`)) send({ type: 'qso:delete', id: row.id });
+  });
+  delTd.appendChild(delBtn);
+  tr.appendChild(delTd);
+
+  return tr;
+}
+
+function buildEditRow(q: Qso): HTMLTableRowElement {
+  const tr = document.createElement('tr');
+  tr.className = 'qso-edit-row';
+
+  const callInput = document.createElement('input');
+  callInput.value = q.call;
+  const callTd = document.createElement('td');
+  callTd.appendChild(callInput);
+  tr.appendChild(callTd);
+
+  const utcTd = document.createElement('td');
+  utcTd.textContent = toQsoRow(q, null).utc;
+  tr.appendChild(utcTd);
+
+  const bandSelect = document.createElement('select');
+  for (const band of BANDS) {
+    const opt = document.createElement('option');
+    opt.value = band.id;
+    opt.textContent = band.label;
+    if (band.id === q.band) opt.selected = true;
+    bandSelect.appendChild(opt);
+  }
+  const bandTd = document.createElement('td');
+  bandTd.appendChild(bandSelect);
+  tr.appendChild(bandTd);
+
+  const classInput = document.createElement('input');
+  classInput.value = q.exchClass;
+  const classTd = document.createElement('td');
+  classTd.appendChild(classInput);
+  tr.appendChild(classTd);
+
+  const sectionInput = document.createElement('input');
+  sectionInput.value = q.exchSection;
+  const sectionTd = document.createElement('td');
+  sectionTd.appendChild(sectionInput);
+  tr.appendChild(sectionTd);
+
+  const saveTd = document.createElement('td');
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', () => {
+    send({
+      type: 'qso:edit',
+      id: q.id,
+      patch: {
+        call: callInput.value.trim().toUpperCase(),
+        band: bandSelect.value,
+        exchClass: classInput.value.trim().toUpperCase(),
+        exchSection: sectionInput.value.trim().toUpperCase(),
+      },
+    });
+    editingId = null;
+    renderYourRecent();
+  });
+  saveTd.appendChild(saveBtn);
+  tr.appendChild(saveTd);
+
+  const cancelTd = document.createElement('td');
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => {
+    editingId = null;
+    renderYourRecent();
+  });
+  cancelTd.appendChild(cancelBtn);
+  tr.appendChild(cancelTd);
+
+  return tr;
 }
 
 function renderTicker(): void {

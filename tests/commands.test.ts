@@ -231,6 +231,48 @@ describe('qso:edit dupe recompute (CO-8)', () => {
   });
 });
 
+describe('qso:edit / qso:delete ownership (CO-4)', () => {
+  test('operator B cannot edit operator A\'s QSO', async () => {
+    const deps = await makeDeps();
+    const connA = await signIn(deps, 'W1OP');
+    await dispatch(deps, connA, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, connA, { type: 'qso:add', clientId: 'c1', qso: newQso() });
+    const id = deps.ctx.state.qsoIdByClientId.get('c1')!;
+
+    const connB = await signIn(deps, 'W2OP');
+    await dispatch(deps, connB, { type: 'qso:edit', id, patch: { exchSection: 'WPA' } });
+    expect((lastRejects(connB)[0] as any).reason).toBe('NOT_YOUR_QSO');
+    expect(deps.ctx.state.qsos.get(id)?.exchSection).toBe('EPA'); // unchanged
+  });
+
+  test('operator B cannot delete operator A\'s QSO', async () => {
+    const deps = await makeDeps();
+    const connA = await signIn(deps, 'W1OP');
+    await dispatch(deps, connA, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, connA, { type: 'qso:add', clientId: 'c1', qso: newQso() });
+    const id = deps.ctx.state.qsoIdByClientId.get('c1')!;
+
+    const connB = await signIn(deps, 'W2OP');
+    await dispatch(deps, connB, { type: 'qso:delete', id });
+    expect((lastRejects(connB)[0] as any).reason).toBe('NOT_YOUR_QSO');
+    expect(deps.ctx.state.qsos.get(id)?.deleted).toBeFalsy();
+  });
+
+  test('the owning operator can edit and delete their own QSO', async () => {
+    const deps = await makeDeps();
+    const conn = await signIn(deps, 'W1OP');
+    await dispatch(deps, conn, { type: 'reserve', band: '20m', mode: 'PH', station: 'MAIN' });
+    await dispatch(deps, conn, { type: 'qso:add', clientId: 'c1', qso: newQso() });
+    const id = deps.ctx.state.qsoIdByClientId.get('c1')!;
+
+    await dispatch(deps, conn, { type: 'qso:edit', id, patch: { exchSection: 'WPA' } });
+    expect(deps.ctx.state.qsos.get(id)?.exchSection).toBe('WPA');
+
+    await dispatch(deps, conn, { type: 'qso:delete', id });
+    expect(deps.ctx.state.qsos.get(id)?.deleted).toBe(true);
+  });
+});
+
 describe('reserve', () => {
   test('a second operator cannot claim an already-held band/mode slot', async () => {
     const deps = await makeDeps();

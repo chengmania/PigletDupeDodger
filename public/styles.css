@@ -316,6 +316,12 @@ button:disabled {
   color: var(--accent-fg);
 }
 
+.badge-dupe {
+  background: var(--danger);
+  color: var(--danger-fg);
+  margin-left: 0.5rem;
+}
+
 .log-form {
   display: flex;
   flex-direction: column;
@@ -435,8 +441,7 @@ input.invalid {
   color: var(--danger-fg);
 }
 
-.ticker,
-.your-recent {
+.ticker {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -445,8 +450,7 @@ input.invalid {
   gap: 0.4rem;
 }
 
-.ticker li,
-.your-recent li {
+.ticker li {
   padding: 0.4rem 0.6rem;
   background: var(--surface-raised);
   border: 1px solid var(--border);
@@ -458,6 +462,50 @@ input.invalid {
   gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.9rem;
+}
+
+.qso-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  display: block;
+}
+
+.qso-table thead,
+.qso-table tbody {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.qso-table th,
+.qso-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+}
+
+.qso-table button {
+  min-height: auto;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.qso-table input,
+.qso-table select {
+  min-height: auto;
+  padding: 0.25rem 0.4rem;
+  width: 100%;
+}
+
+.qso-edit-row {
+  background: var(--surface-raised);
 }
 
 .ticker-pending {

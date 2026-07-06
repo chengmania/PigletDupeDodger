@@ -43,7 +43,8 @@ export type RejectReason =
   | 'DUPE_CONFIRM_REQUIRED'
   | 'NOT_YOUR_SLOT'
   | 'SLOT_TAKEN'
-  | 'NOT_FOUND';
+  | 'NOT_FOUND'
+  | 'NOT_YOUR_QSO';
 
 export type ServerMessage =
   | { type: 'welcome'; you: Operator; serverNowUtc: string; state: FullState }
